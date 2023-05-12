@@ -1,6 +1,13 @@
 from enum import Enum
+from Database.MySQLBase import MySQLBase, FetchCursor
 from Database.DBDict import DBDict
-import mysql.connector
+from Database.QueryWriter import QueryWriter
+from Database.POPO.RealEstate import RealEstate
+from Database.POPO.UtilityProvider import UtilityProvider
+from Database.POPO.ElectricBillData import ElectricBillData
+from Database.POPO.ElectricData import ElectricData
+from Database.POPO.NatGasBillData import NatGasBillData
+from Database.POPO.NatGasData import NatGasData
 
 
 class ETFDataTypes(Enum):
@@ -23,97 +30,28 @@ class ETFDataTypes(Enum):
 # class Database
 # Use id for Update where clause wherever possible. The front end will be programmed with this assumption for simplicity
 ########################################################################################################################
-class MySQLAM:
-    _DB = None
+class MySQLAM(MySQLBase):
+    """Class for AM MySQL database connections.
 
-    def __init__(self):
-        self.host = "localhost"
-        self.user = "root"
-        self.password = "=a4tUtheWur_n8=udAs_aZ7qeB84w="
+    This class contains functionality for AM MySQL database interactions.
+
+    Inherits:
+        MySQLBase
+    """
+    def __init__(self, fetch_cursor=FetchCursor.LIST_DICT):
+        """Init MySQLAM """
         # TODO need to setup to use correct db name for dev and prod
-        self.db_name = "am_dev"
-        self.cursor = None
-        self.dict_cursor = None
+        super(MySQLAM, self).__init__(host="localhost", user="root", password="=a4tUtheWur_n8=udAs_aZ7qeB84w=",
+                                      db_name="am_dev", fetch_cursor=fetch_cursor)
 
-        if MySQLAM._DB is None:
-            try:
-                MySQLAM._DB = mysql.connector.connect(host=self.host, user=self.user, passwd=self.password,
-                                                      database=self.db_name)
-            except mysql.connector.Error as err:
-                print(str(err))
+    @MySQLBase.fetch_cursor.setter
+    def fetch_cursor(self, fetch_cursor):
+        """ Set self._fetch_cursor
 
-        if MySQLAM._DB is not None:
-            try:
-                self.cursor = MySQLAM._DB.cursor()
-                self.dict_cursor = MySQLAM._DB.cursor(dictionary=True)
-            except mysql.connector.Error as err:
-                print(str(err))
-
-    def __del__(self):
-        self.cursors_close()
-
-    def cursors_close(self):
-        try:
-            if self.cursor is not None:
-                self.cursor.close()
-            if self.dict_cursor is not None:
-                self.dict_cursor.close()
-        except mysql.connector.Error as err:
-            print(str(err))
-
-    def db_close(self):
-        try:
-            self.cursors_close()
-            if MySQLAM._DB is not None:
-                MySQLAM._DB.close()
-        except mysql.connector.Error as err:
-            print(str(err))
-
-    def execute_fetch(self, query, values=None, cursor=None):
-        if cursor is None:
-            cursor = self.dict_cursor
-        else:
-            cursor = self.cursor
-        cursor.execute(query, values)
-
-        return cursor.fetchall()
-
-    def execute_commit(self, query_list, value_dict_list, execute_many=False):
-        if not isinstance(query_list, list):
-            query_list = [query_list]
-        if isinstance(value_dict_list, dict):
-            value_dict_list = [value_dict_list]
-
-        try:
-            if execute_many:
-                self.cursor.executemany(query_list[0], value_dict_list)
-            else:
-                if len(query_list) != len(value_dict_list):
-                    return "Query List and Value List of Dictionaries have different lengths"
-
-                for i in range(len(query_list)):
-                    self.cursor.execute(query_list[i], value_dict_list[i])
-
-            MySQLAM._DB.commit()
-            return None
-        except mysql.connector.Error as err1:
-            try:
-                MySQLAM._DB.rollback()
-                return format(err1)
-            except mysql.connector.Error as err2:
-                return format(err1)+"\nRollback Failed\n"+format(err2)
-
-    def executemany_commit(self, query, value_tuple_list):
-        try:
-            self.cursor.executemany(query, value_tuple_list)
-            MySQLAM._DB.commit()
-            return None
-        except mysql.connector.Error as err1:
-            try:
-                MySQLAM._DB.rollback()
-                return format(err1)
-            except mysql.connector.Error as err2:
-                return format(err1)+"\n"+format(err2)
+        Args:
+            fetch_cursor (FetchCursor):
+        """
+        MySQLBase.fetch_cursor.fset(self, fetch_cursor)
 
     @staticmethod
     def set_where_stmt(key, value, op):
@@ -894,3 +832,268 @@ class MySQLAM:
             return major_endpoint + ", " + endpoint + " save function not set."
         else:
             return res
+
+    def real_estate_read(self, fields="*", wheres=(), order_bys=()):
+        """ Read fields from real_estate table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list(RealEstate). list will be empty if no real estate data found matching wheres
+
+        Raises:
+            MySQLException if database read issue occurs
+        """
+        qw = QueryWriter("real_estate", fields=fields, wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+
+        return [RealEstate(None, None, None, None, None, None, db_dict=d) for d in dict_list]
+
+    def mysunpower_hourly_data_read(self, distinct=False, wheres=(), order_bys=()):
+        """ Read from mysunpower_hourly_data table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list(dict) or pd.DataFrame depending on self._fetch_cursor. all fields as keys or columns
+        """
+        qw = QueryWriter("mysunpower_hourly_data", distinct=distinct, wheres=wheres, order_bys=order_bys,)
+        query, params = qw.write_read_query()
+
+        return self.execute_fetch(query, params=params)
+
+    def mysunpower_hourly_data_insert(self, data_list):
+        """ Insert into mysunpower_hourly_data table
+
+        Args:
+            data_list (list(dict)): each dict in the list must have the same keys
+
+        Raises:
+            MySQLException if data_list element dicts do not all have the same keys, or other issue occurs
+        """
+        if len(data_list) == 0:
+            return
+
+        qw = QueryWriter("mysunpower_hourly_data", fields=list(data_list[0].keys()))
+        query, data_list = qw.write_insert_query(data_list)
+
+        self.execute_commit(query, params_list=data_list, execute_many=True)
+
+    def _real_estate_read_fk(self, dict_list):
+        """ Use this function to get real_estate table data
+
+        Args:
+            dict_list (list(dict)): each dict in list must have key "real_estate_id"
+
+        Returns:
+            dict_list with the following key/value pair added to each dict:
+            key "real_estate" and values RealEstate instances with data for real_estate_id
+        """
+        re_dict = self.real_estate_read(wheres=[["id", "in", list(set([d["real_estate_id"] for d in dict_list]))]])
+        re_dict = {real_estate.id: real_estate for real_estate in re_dict}
+
+        for d in dict_list:
+            d["real_estate"] = re_dict[d["real_estate_id"]]
+
+        return dict_list
+
+    def electric_bill_data_read(self, wheres=(), order_bys=()):
+        """ Read all fields from electric_bill_data table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list(ElectricBillData). list will be empty if no bill data found matching wheres
+
+        Raises:
+            MySQLException if database read issue occurs
+        """
+        qw = QueryWriter("electric_bill_data", wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+        dict_list = self._real_estate_read_fk(dict_list)
+
+        bill_list = []
+        for d in dict_list:
+            bill_list.append(ElectricBillData(None, None, None, None, None, None, None, None, None, None, None, None,
+                                              None, db_dict=d))
+
+        return bill_list
+
+    def electric_bill_data_insert(self, bill_list):
+        """ Insert into electric_bill_data table
+
+        Args:
+            bill_list (list(ElectricBillData)):
+
+        Raises:
+            MySQLException if any required columns are missing or other database issue occurs
+        """
+        if len(bill_list) == 0:
+            return
+
+        bill_list = [b.to_insert_dict() for b in bill_list]
+
+        qw = QueryWriter("electric_bill_data", fields=list(bill_list[0].keys()))
+        query, bill_list = qw.write_insert_query(bill_list)
+
+        self.execute_commit(query, params_list=bill_list, execute_many=True)
+
+    def electric_data_read(self, wheres=(), order_bys=()):
+        """ Read from electric_data table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list(ElectricData). list will be empty if no electric data found matching wheres
+
+        Raises:
+            MySQLException if database read issue occurs
+        """
+        qw = QueryWriter("electric_data", wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+        dict_list = self._real_estate_read_fk(dict_list)
+
+        data_list = []
+        for d in dict_list:
+            data_list.append(ElectricData(None, None, None, None, None, None, None, db_dict=d))
+
+        return data_list
+
+    def electric_data_insert(self, data_list):
+        """ Insert into electric_data table
+
+        Args:
+            data_list (list(ElectricData)):
+
+        Raises:
+            MySQLException if any required columns are missing or other database issue occurs
+        """
+        if len(data_list) == 0:
+            return
+
+        data_list = [b.to_insert_dict() for b in data_list]
+
+        qw = QueryWriter("electric_data", fields=list(data_list[0].keys()))
+        query, data_list = qw.write_insert_query(data_list)
+
+        self.execute_commit(query, params_list=data_list, execute_many=True)
+
+    def estimate_notes_read(self, wheres=(), order_bys=()):
+        """ Read from estimate_notes table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list(dict) of records with all fields as dict keys
+
+        Raises:
+            MySQLException
+        """
+        qw = QueryWriter("estimate_notes", wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        notes_list = self.execute_fetch(query, params=params)
+        notes_list = self._real_estate_read_fk(notes_list)
+
+        for d in notes_list:
+            d["provider"] = UtilityProvider(d["provider"])
+
+        return notes_list
+
+    def natgas_bill_data_read(self, wheres=(), order_bys=()):
+        """ Read all fields from natgas_bill_data table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list(NatGasBillData). list will be empty if no bill data found matching wheres
+
+        Raises:
+            MySQLException if database read issue occurs
+        """
+        qw = QueryWriter("natgas_bill_data", wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+        dict_list = self._real_estate_read_fk(dict_list)
+
+        bill_list = []
+        for d in dict_list:
+            bill_list.append(NatGasBillData(None, None, None, None, None, None, None, None, None, None, None, None,
+                                            None, None, None, None, None, None, db_dict=d))
+
+        return bill_list
+
+    def natgas_bill_data_insert(self, bill_list):
+        """ Insert into natgas_bill_data table
+
+        Args:
+            bill_list (list(NatGasBillData)):
+
+        Raises:
+            MySQLException if any required columns are missing or other database issue occurs
+        """
+        if len(bill_list) == 0:
+            return
+
+        bill_list = [b.to_insert_dict() for b in bill_list]
+
+        qw = QueryWriter("natgas_bill_data", fields=list(bill_list[0].keys()))
+        query, bill_list = qw.write_insert_query(bill_list)
+
+        self.execute_commit(query, params_list=bill_list, execute_many=True)
+
+    def natgas_data_read(self, wheres=(), order_bys=()):
+        """ Read from natgas_data table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list(NatGasData). list will be empty if no natural gas data found matching wheres
+
+        Raises:
+            MySQLException if database read issue occurs
+        """
+        qw = QueryWriter("natgas_data", wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+        dict_list = self._real_estate_read_fk(dict_list)
+
+        data_list = []
+        for d in dict_list:
+            data_list.append(NatGasData(None, None, None, None, None, None, None, None, None, None, db_dict=d))
+
+        return data_list
+
+    def natgas_data_insert(self, data_list):
+        """ Insert into natgas_data table
+
+        Args:
+            data_list (list(NatGasData)):
+
+        Raises:
+            MySQLException if any required columns are missing or other database issue occurs
+        """
+        if len(data_list) == 0:
+            return
+
+        data_list = [b.to_insert_dict() for b in data_list]
+
+        qw = QueryWriter("natgas_data", fields=list(data_list[0].keys()))
+        query, data_list = qw.write_insert_query(data_list)
+
+        self.execute_commit(query, params_list=data_list, execute_many=True)

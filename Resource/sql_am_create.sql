@@ -3,6 +3,8 @@ show tables;
 SET foreign_key_checks = 0;
 SET foreign_key_checks = 1;
 
+
+
 # Notes for creating new meta table (e.g. stocks)
 # must be same name as data_subtypes prefix (e.g. stocks, etfs)
 
@@ -381,25 +383,169 @@ create table iex_api_tokens(
     type enum("Secret", "Publishable"),
     env enum("Production", "Sandbox"));
 
+# enum('10 Wagon Ln Centereach NY 11720')
+create table real_estate (
+	id smallint not null auto_increment primary key,
+    address varchar(70) not null unique,
+    street_num varchar(10) not null,
+    street_name varchar(20) not null,
+    apt varchar(10),
+    city varchar(20) not null,
+    state char(2) not null,
+    zip_code char(5) not null
+);
+
 create table mysunpower_hourly_data (
 	dt datetime not null primary key,
     solar_kwh decimal(5,2),
     home_kwh decimal(5,2)
 );
 
+create table electric_bill_data (
+	id smallint not null auto_increment primary key, 
+    real_estate_id smallint not null,
+	provider enum('PSEG') not null,
+    start_date date not null,
+    end_date date not null,
+    total_kwh smallint unsigned not null,
+    eh_kwh smallint unsigned not null,
+    bank_kwh mediumint unsigned not null,
+    total_cost decimal(6,2) not null,
+    bs_rate decimal(4,2) not null,
+    bs_cost decimal(6,2) not null,
+    first_kwh smallint unsigned,
+    first_rate decimal(5,4),
+    first_cost decimal(6,2),
+    next_kwh smallint unsigned,
+    next_rate decimal(5,4),
+    next_cost decimal(6,2),
+    cbc_rate decimal(5,4),
+    cbc_cost decimal(4,2),
+    mfc_rate decimal(7,6),
+    mfc_cost decimal(4,2),
+    dsc_total_cost decimal(6,2) not null,
+    psc_rate decimal(7,6),
+    psc_cost decimal(6,2),
+    psc_total_cost decimal(6,2),
+    der_rate decimal(7,6),
+    der_cost decimal(4,2),
+    dsa_rate decimal(7,6),
+    dsa_cost decimal(4,2),
+    rda_rate decimal(7,6),
+    rda_cost decimal(4,2),
+    nysa_rate decimal(7,6),
+    nysa_cost decimal(4,2),
+    rbp_rate decimal(7,6),
+    rbp_cost decimal(4,2),
+    spta_rate decimal(7,6),
+    spta_cost decimal(4,2),
+    st_rate decimal(5,4),
+    st_cost decimal(4,2),
+    toc_total_cost decimal(5,2) not null,
+    is_actual boolean not null,
+    unique key unique_reid_start_date_actual (real_estate_id, start_date, is_actual),
+    unique key unique_reid_end_date_actual (real_estate_id, end_date, is_actual),
+    foreign key (real_estate_id) references real_estate (id)
+);
 
+create table electric_data (
+	id smallint not null auto_increment primary key,
+    real_estate_id smallint not null,
+	provider enum('PSEG') not null,
+    month_date date not null,
+    month_year char(6) not null,
+    first_kwh smallint unsigned not null,
+    first_rate decimal(5,4) not null,
+    next_rate decimal(5,4) not null,
+    mfc_rate decimal(7,6),
+    psc_rate decimal(7,6),
+    der_rate decimal(7,6),
+    dsa_rate decimal(7,6),
+    rda_rate decimal(7,6),
+    nysa_rate decimal(7,6),
+    rbp_rate decimal(7,6),
+    spta_rate decimal(7,6),
+    unique key unique_reid_month_year (real_estate_id, month_year)
+);
 
+create table estimate_notes (
+	id smallint not null auto_increment primary key,
+    real_estate_id smallint not null,
+	provider enum('PSEG', 'NationalGrid') not null,
+    note_type varchar(20) not null,
+    note text not null,
+    note_order smallint not null,
+    unique key unique_reid_provider_note_type (real_estate_id, provider, note_type)
+);
 
+create table natgas_bill_data (
+	id smallint not null auto_increment primary key, 
+    real_estate_id smallint not null,
+	provider enum('NationalGrid') not null,
+    start_date date not null,
+    end_date date not null,
+    total_therms smallint unsigned not null,
+    saved_therms smallint unsigned not null,
+    total_cost decimal(6,2) not null,
+    bsc_therms decimal(3,1) not null,
+    bsc_cost decimal(5,2) not null,
+    next_therms decimal(4,1) not null,
+    next_rate decimal(5,4) not null,
+    next_cost decimal(5,2) not null,
+    over_therms decimal(4,1),
+    over_rate decimal(5,4),
+    over_cost decimal(5,2),
+    dra_rate decimal(7,6),
+    dra_cost decimal(4,2),
+    sbc_rate decimal(7,6),
+    sbc_cost decimal(4,2),
+    tac_rate decimal(7,6),
+    tac_cost decimal(4,2),
+    bc_cost decimal(4,2),
+    ds_nysls_rate decimal(7,6),
+    ds_nysls_cost decimal(4,2),
+    ds_nysst_rate decimal(5,4),
+    ds_nysst_cost decimal(4,2),
+    ds_total_cost decimal(6,2) not null,
+    gs_rate decimal(7,6) not null,
+    gs_cost decimal(6,2) not null,
+    ss_nysls_rate decimal(7,6),
+    ss_nysls_cost decimal(4,2),
+    ss_nysst_rate decimal(5,4),
+    ss_nysst_cost decimal(4,2),
+    ss_total_cost decimal(6,2) not null,
+    pbc_cost decimal(4,2),
+    oca_total_cost decimal(5,2) not null,
+    is_actual boolean not null,
+    unique key unique_reid_start_date_actual (real_estate_id, start_date, is_actual),
+    unique key unique_reid_end_date_actual (real_estate_id, end_date, is_actual)
+);
 
-
-
-
-
-
-
-
-
-
+create table natgas_data (
+	id smallint not null auto_increment primary key,
+    real_estate_id smallint not null,
+	provider enum('NationalGrid') not null,
+    month_date date not null,
+    month_year char(6) not null,
+    bsc_therms decimal(3,1) not null,
+    bsc_rate decimal(6,4) not null,
+    next_therms decimal(4,1) not null,
+    next_rate decimal(5,4) not null,
+    over_rate decimal(5,4) not null,
+    dra_rate decimal(7,6),
+    wna_low_rate decimal(7,6),
+	wna_high_rate decimal(7,6),
+    sbc_rate decimal(7,6),
+    tac_rate decimal(7,6),
+    bc_rate decimal(4,2),
+    ds_nysls_rate decimal(7,6),
+    ds_nysst_rate decimal(5,4),
+    gs_rate decimal(7,6) not null,
+    ss_nysls_rate decimal(7,6),
+    ss_nysst_rate decimal(5,4),
+    pbc_rate decimal(4,2),
+    unique key unique_reid_month_year (real_estate_id, month_year)
+);
 
 
 
