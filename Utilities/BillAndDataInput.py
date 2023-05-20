@@ -6,11 +6,8 @@ from Utilities.Electric.Model.PSEG import PSEG
 from Utilities.Electric.Model.Solar import Solar
 from Utilities.NatGas.Model.NG import NG
 from Utilities.Electric.View.PSEGViewBase import PSEGViewBase
-from Utilities.Electric.View.PSEGConsoleUI import PSEGConsoleUI
 from Utilities.Electric.View.SolarViewBase import SolarViewBase
-from Utilities.Electric.View.SolarConsoleUI import SolarConsoleUI
 from Utilities.NatGas.View.NGViewBase import NGViewBase
-from Utilities.NatGas.View.NGConsoleUI import NGConsoleUI
 
 
 class BillAndDataInput:

@@ -159,6 +159,21 @@ class NG(UtilityModelBase):
             self.amb_dict[(bill_data.start_date, bill_data.end_date)] = bill_data
         return bill_data
 
+    def read_all_monthly_bills_from_db(self):
+        with MySQLAM() as mam:
+            bill_list = mam.natgas_bill_data_read()
+
+        df = pd.DataFrame()
+
+        for bill in bill_list:
+            df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
+            if bill.is_actual:
+                self.amb_dict[(bill.start_date, bill.end_date)] = bill
+            else:
+                self.emb_dict[(bill.start_date, bill.end_date)] = bill
+
+        return df.sort_values(by=["start_date", "is_actual"])
+
     def insert_monthly_data_to_db(self, natgas_data):
         """ Insert monthly natural gas data to table
 

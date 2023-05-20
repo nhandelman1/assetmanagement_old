@@ -1,8 +1,10 @@
+import pandas as pd
 from enum import Enum
 
 
 class Address(Enum):
     WAGON_LN_10 = "10 Wagon Ln Centereach NY 11720"
+    WAGON_LN_10_APT_1 = "10 Wagon Ln Apt 1 Centereach NY 11720"
 
     @staticmethod
     def to_address(str_addr):
@@ -20,7 +22,7 @@ class Address(Enum):
         str_addr = str_addr.lower()
         if all([x in str_addr for x in ["10", "wagon", "centereach", "ny", "11720"]] +
                [any([x in str_addr for x in ["ln", "la"]])]):
-            return Address.WAGON_LN_10
+            return Address.WAGON_LN_10_APT_1 if "apt 1" in str_addr else Address.WAGON_LN_10
         raise ValueError("No Address matches string address: " + str_addr)
 
 
@@ -53,3 +55,11 @@ class RealEstate:
             self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
             if isinstance(self.address, str):
                 self.address = Address(self.address)
+
+    def to_pd_df(self):
+        """ Convert instance attributes to single row pandas dataframe
+
+        Returns:
+            pandas dataframe
+        """
+        return pd.DataFrame(self.__dict__, index=[0])

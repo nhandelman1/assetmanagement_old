@@ -383,7 +383,6 @@ create table iex_api_tokens(
     type enum("Secret", "Publishable"),
     env enum("Production", "Sandbox"));
 
-# enum('10 Wagon Ln Centereach NY 11720')
 create table real_estate (
 	id smallint not null auto_increment primary key,
     address varchar(70) not null unique,
@@ -465,7 +464,8 @@ create table electric_data (
     nysa_rate decimal(7,6),
     rbp_rate decimal(7,6),
     spta_rate decimal(7,6),
-    unique key unique_reid_month_year (real_estate_id, month_year)
+    unique key unique_reid_month_year (real_estate_id, month_year),
+    foreign key (real_estate_id) references real_estate (id)
 );
 
 create table estimate_notes (
@@ -475,7 +475,8 @@ create table estimate_notes (
     note_type varchar(20) not null,
     note text not null,
     note_order smallint not null,
-    unique key unique_reid_provider_note_type (real_estate_id, provider, note_type)
+    unique key unique_reid_provider_note_type (real_estate_id, provider, note_type),
+    foreign key (real_estate_id) references real_estate (id)
 );
 
 create table natgas_bill_data (
@@ -518,7 +519,8 @@ create table natgas_bill_data (
     oca_total_cost decimal(5,2) not null,
     is_actual boolean not null,
     unique key unique_reid_start_date_actual (real_estate_id, start_date, is_actual),
-    unique key unique_reid_end_date_actual (real_estate_id, end_date, is_actual)
+    unique key unique_reid_end_date_actual (real_estate_id, end_date, is_actual),
+    foreign key (real_estate_id) references real_estate (id)
 );
 
 create table natgas_data (
@@ -544,10 +546,20 @@ create table natgas_data (
     ss_nysls_rate decimal(7,6),
     ss_nysst_rate decimal(5,4),
     pbc_rate decimal(4,2),
-    unique key unique_reid_month_year (real_estate_id, month_year)
+    unique key unique_reid_month_year (real_estate_id, month_year),
+    foreign key (real_estate_id) references real_estate (id)
 );
 
-
+create table real_property_values (
+	id smallint not null auto_increment primary key,
+    real_estate_id smallint not null,
+    item varchar(100) not null,
+    purchase_date date not null,
+    cost_basis decimal(11, 2) not null,
+    dep_class enum('None', 'GDS-RRP') not null,
+    notes text,
+    foreign key (real_estate_id) references real_estate (id)
+);
 
 
 

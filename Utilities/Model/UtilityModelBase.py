@@ -1,4 +1,5 @@
 import datetime
+import pandas as pd
 from abc import ABC, abstractmethod
 from Database.MySQLAM import MySQLAM
 from Database.POPO.RealEstate import RealEstate, Address
@@ -66,6 +67,21 @@ class UtilityModelBase(ABC):
             MySQLException if issue with database read
         """
         raise NotImplementedError("read_monthly_bill_from_db_by_start_date() not implemented by subclass")
+
+    @abstractmethod
+    def read_all_monthly_bills_from_db(self):
+        """ read all monthly utility bills
+
+        self.amb_dict[(bill start date, bill end date)] and self.emb_dict[(bill start date, bill end date)]
+        are set with monthly utility bills
+
+        Returns:
+              pandas dataframe with all monthly bill data ordered from most recent to oldest start date
+
+        Raises:
+            MySQLException if issue with database read
+        """
+        raise NotImplementedError("read_all_monthly_bills_from_db() not implemented by subclass")
 
     @abstractmethod
     def get_utility_data_instance(self, str_dict):
