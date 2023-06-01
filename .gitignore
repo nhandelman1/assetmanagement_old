@@ -143,8 +143,9 @@ cython_debug/
 *.png
 
 # Directories
-Utilities/Electric/MySunpowerFiles/
-Utilities/Electric/PSEGFiles/
-Utilities/NatGas/NGFiles/
+Services/Electric/MySunpowerFiles/
+Services/Electric/PSEGFiles/
+Services/NatGas/NGFiles/
+Services/Simple/SimpleFiles/
 
 # Specific Files

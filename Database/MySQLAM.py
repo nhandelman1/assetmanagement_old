@@ -1,9 +1,14 @@
+import pandas as pd
 from enum import Enum
+from typing import Union
 from Database.MySQLBase import MySQLBase, FetchCursor
 from Database.DBDict import DBDict
 from Database.QueryWriter import QueryWriter
 from Database.POPO.RealEstate import RealEstate
-from Database.POPO.UtilityProvider import UtilityProvider
+from Database.POPO.RealPropertyValues import RealPropertyValues
+from Database.POPO.ServiceProvider import ServiceProvider
+from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
+from Database.POPO.SimpleServiceBillData import SimpleServiceBillData
 from Database.POPO.ElectricBillData import ElectricBillData
 from Database.POPO.ElectricData import ElectricData
 from Database.POPO.NatGasBillData import NatGasBillData
@@ -840,10 +845,10 @@ class MySQLAM(MySQLBase):
             see QueryWriter
 
         Returns:
-            list(RealEstate). list will be empty if no real estate data found matching wheres
+            list[RealEstate]: list will be empty if no real estate data found matching wheres
 
         Raises:
-            MySQLException if database read issue occurs
+            MySQLException: if database read issue occurs
         """
         qw = QueryWriter("real_estate", fields=fields, wheres=wheres, order_bys=order_bys)
         query, params = qw.write_read_query()
@@ -852,6 +857,30 @@ class MySQLAM(MySQLBase):
 
         return [RealEstate(None, None, None, None, None, None, db_dict=d) for d in dict_list]
 
+    def real_property_values_read(self, wheres=(), order_bys=()):
+        """ Read from real_property_values table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list[RealPropertyValues]: list will be empty if no real property values data found matching wheres
+
+        Raises:
+            MySQLException: if database read issue occurs
+        """
+        qw = QueryWriter("real_property_values", wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+        dict_list = self._real_estate_read_fk(dict_list)
+
+        data_list = []
+        for d in dict_list:
+            data_list.append(RealPropertyValues(None, None, None, None, None, db_dict=d))
+
+        return data_list
+
     def mysunpower_hourly_data_read(self, distinct=False, wheres=(), order_bys=()):
         """ Read from mysunpower_hourly_data table
 
@@ -859,7 +888,7 @@ class MySQLAM(MySQLBase):
             see QueryWriter
 
         Returns:
-            list(dict) or pd.DataFrame depending on self._fetch_cursor. all fields as keys or columns
+            Union[list[dict], pd.DataFrame]: depending on self._fetch_cursor. all fields as keys or columns
         """
         qw = QueryWriter("mysunpower_hourly_data", distinct=distinct, wheres=wheres, order_bys=order_bys,)
         query, params = qw.write_read_query()
@@ -870,10 +899,10 @@ class MySQLAM(MySQLBase):
         """ Insert into mysunpower_hourly_data table
 
         Args:
-            data_list (list(dict)): each dict in the list must have the same keys
+            data_list (list[dict]): each dict in the list must have the same keys
 
         Raises:
-            MySQLException if data_list element dicts do not all have the same keys, or other issue occurs
+            MySQLException: if data_list element dicts do not all have the same keys, or other issue occurs
         """
         if len(data_list) == 0:
             return
@@ -887,11 +916,11 @@ class MySQLAM(MySQLBase):
         """ Use this function to get real_estate table data
 
         Args:
-            dict_list (list(dict)): each dict in list must have key "real_estate_id"
+            dict_list (list[dict]): each dict in list must have key "real_estate_id"
 
         Returns:
-            dict_list with the following key/value pair added to each dict:
-            key "real_estate" and values RealEstate instances with data for real_estate_id
+            list[dict]: dict_list argument with the following key/value pair added to each dict:
+                key "real_estate" and values RealEstate instances with data for real_estate_id
         """
         re_dict = self.real_estate_read(wheres=[["id", "in", list(set([d["real_estate_id"] for d in dict_list]))]])
         re_dict = {real_estate.id: real_estate for real_estate in re_dict}
@@ -908,10 +937,10 @@ class MySQLAM(MySQLBase):
             see QueryWriter
 
         Returns:
-            list(ElectricBillData). list will be empty if no bill data found matching wheres
+            list[ElectricBillData]: list will be empty if no bill data found matching wheres
 
         Raises:
-            MySQLException if database read issue occurs
+            MySQLException: if database read issue occurs
         """
         qw = QueryWriter("electric_bill_data", wheres=wheres, order_bys=order_bys)
         query, params = qw.write_read_query()
@@ -930,10 +959,10 @@ class MySQLAM(MySQLBase):
         """ Insert into electric_bill_data table
 
         Args:
-            bill_list (list(ElectricBillData)):
+            bill_list (list[ElectricBillData]):
 
         Raises:
-            MySQLException if any required columns are missing or other database issue occurs
+            MySQLException: if any required columns are missing or other database issue occurs
         """
         if len(bill_list) == 0:
             return
@@ -952,10 +981,10 @@ class MySQLAM(MySQLBase):
             see QueryWriter
 
         Returns:
-            list(ElectricData). list will be empty if no electric data found matching wheres
+            list[ElectricData]: list will be empty if no electric data found matching wheres
 
         Raises:
-            MySQLException if database read issue occurs
+            MySQLException: if database read issue occurs
         """
         qw = QueryWriter("electric_data", wheres=wheres, order_bys=order_bys)
         query, params = qw.write_read_query()
@@ -973,10 +1002,10 @@ class MySQLAM(MySQLBase):
         """ Insert into electric_data table
 
         Args:
-            data_list (list(ElectricData)):
+            data_list (list[ElectricData]):
 
         Raises:
-            MySQLException if any required columns are missing or other database issue occurs
+            MySQLException: if any required columns are missing or other database issue occurs
         """
         if len(data_list) == 0:
             return
@@ -995,10 +1024,10 @@ class MySQLAM(MySQLBase):
             see QueryWriter
 
         Returns:
-            list(dict) of records with all fields as dict keys
+            list[dict]: of records with all fields as dict keys
 
         Raises:
-            MySQLException
+            MySQLException:
         """
         qw = QueryWriter("estimate_notes", wheres=wheres, order_bys=order_bys)
         query, params = qw.write_read_query()
@@ -1007,7 +1036,7 @@ class MySQLAM(MySQLBase):
         notes_list = self._real_estate_read_fk(notes_list)
 
         for d in notes_list:
-            d["provider"] = UtilityProvider(d["provider"])
+            d["provider"] = ServiceProvider(d["provider"])
 
         return notes_list
 
@@ -1018,10 +1047,10 @@ class MySQLAM(MySQLBase):
             see QueryWriter
 
         Returns:
-            list(NatGasBillData). list will be empty if no bill data found matching wheres
+            list[NatGasBillData]: list will be empty if no bill data found matching wheres
 
         Raises:
-            MySQLException if database read issue occurs
+            MySQLException: if database read issue occurs
         """
         qw = QueryWriter("natgas_bill_data", wheres=wheres, order_bys=order_bys)
         query, params = qw.write_read_query()
@@ -1040,10 +1069,10 @@ class MySQLAM(MySQLBase):
         """ Insert into natgas_bill_data table
 
         Args:
-            bill_list (list(NatGasBillData)):
+            bill_list (list[NatGasBillData]):
 
         Raises:
-            MySQLException if any required columns are missing or other database issue occurs
+            MySQLException: if any required columns are missing or other database issue occurs
         """
         if len(bill_list) == 0:
             return
@@ -1062,7 +1091,7 @@ class MySQLAM(MySQLBase):
             see QueryWriter
 
         Returns:
-            list(NatGasData). list will be empty if no natural gas data found matching wheres
+            list[NatGasData]: list will be empty if no natural gas data found matching wheres
 
         Raises:
             MySQLException if database read issue occurs
@@ -1083,10 +1112,10 @@ class MySQLAM(MySQLBase):
         """ Insert into natgas_data table
 
         Args:
-            data_list (list(NatGasData)):
+            data_list (list[NatGasData]):
 
         Raises:
-            MySQLException if any required columns are missing or other database issue occurs
+            MySQLException: if any required columns are missing or other database issue occurs
         """
         if len(data_list) == 0:
             return
@@ -1097,3 +1126,47 @@ class MySQLAM(MySQLBase):
         query, data_list = qw.write_insert_query(data_list)
 
         self.execute_commit(query, params_list=data_list, execute_many=True)
+
+    def simple_bill_data_insert(self, bill_list):
+        """ Insert into simple_bill_data table
+
+        Args:
+            bill_list (list[SimpleServiceBillDataBase]): provider must be a simple bill provider. See ServiceProvider
+
+        Raises:
+            ValueError: if the provider for any bill in bill_list does not have a simple bill
+            MySQLException: if any required columns are missing or other database issue occurs
+        """
+        if len(bill_list) == 0:
+            return
+
+        bill_list = [b.to_insert_dict() for b in bill_list]
+
+        qw = QueryWriter("simple_bill_data", fields=list(bill_list[0].keys()))
+        query, bill_list = qw.write_insert_query(bill_list)
+
+        self.execute_commit(query, params_list=bill_list, execute_many=True)
+
+    def simple_bill_data_read(self, wheres=(), order_bys=()):
+        """ Read all fields from simple_bill_data table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list[SimpleServiceBillData]: list will be empty if no bill data found matching wheres
+
+        Raises:
+            MySQLException: if database read issue occurs
+        """
+        qw = QueryWriter("simple_bill_data", wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+        dict_list = self._real_estate_read_fk(dict_list)
+
+        bill_list = []
+        for d in dict_list:
+            bill_list.append(SimpleServiceBillData(None, None, None, None, None, db_dict=d))
+
+        return bill_list

@@ -1,8 +1,8 @@
 import datetime
+from typing import Optional
 from decimal import Decimal
 from Database.POPO.UtilityDataBase import UtilityDataBase
-from Database.POPO.RealEstate import RealEstate
-from Database.POPO.UtilityProvider import UtilityProvider
+from Database.POPO.ServiceProvider import ServiceProvider
 
 
 class ElectricData(UtilityDataBase):
@@ -22,17 +22,17 @@ class ElectricData(UtilityDataBase):
             first_kwh (int): max kwh used at first rate. will not be in bill if none used
             first_rate (Decimal): first rate. will not be in bill if none used
             next_rate (Decimal): next rate. will not be in bill if none used
-            mfc_rate (Decimal, optional): merchant function charge rate. Default None
-            psc_rate (Decimal, optional): power supply charge rate. Default None
-            der_rate (Decimal, optional): distributed energy resources charge rate. Default None
-            dsa_rate (Decimal, optional): delivery service adjustment cost. Default None
-            rda_rate (Decimal, optional): revenue decoupling adjustment rate. Default None
-            nysa_rate (Decimal, optional): new york state assessment rate. Default None
-            rbp_rate (Decimal, optional): revenue based pilots rate. Default None
-            spta_rate (Decimal, optional): suffolk property tax adjustment rate. Default None
-            db_dict (dict, optional): dictionary holding arguments loaded from database table. if an argument is in the
+            mfc_rate (Optional[Decimal]): merchant function charge rate. Default None
+            psc_rate (Optional[Decimal]): power supply charge rate. Default None
+            der_rate (Optional[Decimal]): distributed energy resources charge rate. Default None
+            dsa_rate (Optional[Decimal]): delivery service adjustment cost. Default None
+            rda_rate (Optional[Decimal]): revenue decoupling adjustment rate. Default None
+            nysa_rate (Optional[Decimal]): new york state assessment rate. Default None
+            rbp_rate (Optional[Decimal]): revenue based pilots rate. Default None
+            spta_rate (Optional[Decimal]): suffolk property tax adjustment rate. Default None
+            db_dict (Optional[dict]): dictionary holding arguments loaded from database table. if an argument is in the
                 dictionary, it will overwrite an argument provided explicitly through the argument variable
-            str_dict (dict, optional): dictionary holding arguments as strings or type specified in this docstring.
+            str_dict (Optional[dict]): dictionary holding arguments as strings or type specified in this docstring.
                 if an argument is in the dictionary, it will overwrite an argument provided explicitly through the
                 argument variable or through db_dict. month_date str format must be YYYY-MM-DD
         """
@@ -57,7 +57,7 @@ class ElectricData(UtilityDataBase):
         """ Update instance variables using string (or otherwise specified below) values in str_dict
 
         "real_estate" key must have value RealEstate instance
-        "provider" key can have value string or UtilityProvider instance
+        "provider" key can have value string or ServiceProvider instance
 
         Args:
             see superclass docstring
@@ -68,7 +68,7 @@ class ElectricData(UtilityDataBase):
 
             self.__dict__.update(pair for pair in str_dict.items() if pair[0] in self.__dict__.keys())
             self.real_estate = self.real_estate
-            self.provider = UtilityProvider(self.provider)
+            self.provider = ServiceProvider(self.provider)
             if isinstance(self.month_date, str):
                 self.month_date = datetime.datetime.strptime(self.month_date, "%Y-%m-%d").date()
             self.month_year = self.month_year

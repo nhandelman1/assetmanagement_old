@@ -1,8 +1,9 @@
 import datetime
+from typing import Optional
 from decimal import Decimal
 from Database.POPO.UtilityDataBase import UtilityDataBase
 from Database.POPO.RealEstate import RealEstate
-from Database.POPO.UtilityProvider import UtilityProvider
+from Database.POPO.ServiceProvider import ServiceProvider
 
 
 class NatGasData(UtilityDataBase):
@@ -26,20 +27,20 @@ class NatGasData(UtilityDataBase):
             next_rate (Decimal): next rate.
             over_rate (Decimal): over/last rate.
             gs_rate (Decimal): gas supply rate
-            dra_rate (Decimal, optional): delivery rate adjustment rate. Default None
-            wna_low_rate (Decimal, optional): weather normalization adjustment rate for lower therms. Default None
-            wna_high_rate (Decimal, optional): weather normalization adjustment rate for higher therms. Default None
-            sbc_rate (Decimal, optional): system benefits charge. Default None
-            tac_rate (Decimal, optional): transportation adjustment charge rate. Default None
-            bc_rate (Decimal, optional): billing charge rate
-            ds_nysls_rate (Decimal, optional): delivery services ny state and local surcharges rate. Default None.
-            ds_nysst_rate (Decimal, optional): delivery services ny state sales tax. Default None
-            ss_nysls_rate (Decimal, optional): supply services ny state and local surcharges rate. Default None.
-            ss_nysst_rate (Decimal, optional): supply services ny state sales tax. Default None
-            pbc_rate (Decimal, optional): paperless billing credit rate. Default None
-            db_dict (dict, optional): dictionary holding arguments. if an argument is in the dictionary, it will
+            dra_rate (Optional[Decimal]): delivery rate adjustment rate. Default None
+            wna_low_rate (Optional[Decimal]): weather normalization adjustment rate for lower therms. Default None
+            wna_high_rate (Optional[Decimal]): weather normalization adjustment rate for higher therms. Default None
+            sbc_rate (Optional[Decimal]): system benefits charge. Default None
+            tac_rate (Optional[Decimal]): transportation adjustment charge rate. Default None
+            bc_rate (Optional[Decimal]): billing charge rate
+            ds_nysls_rate (Optional[Decimal]): delivery services ny state and local surcharges rate. Default None.
+            ds_nysst_rate (Optional[Decimal]): delivery services ny state sales tax. Default None
+            ss_nysls_rate (Optional[Decimal]): supply services ny state and local surcharges rate. Default None.
+            ss_nysst_rate (Optional[Decimal]): supply services ny state sales tax. Default None
+            pbc_rate (Optional[Decimal]): paperless billing credit rate. Default None
+            db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
                 overwrite an argument provided explicitly through the argument variable
-            str_dict (dict, optional): dictionary holding arguments as strings or type specified in this docstring.
+            str_dict (Optional[dict]): dictionary holding arguments as strings or type specified in this docstring.
                 if an argument is in the dictionary, it will overwrite an argument provided explicitly through the
                 argument variable or through db_dict. month_date str format must be YYYY-MM-DD
         """
@@ -70,7 +71,7 @@ class NatGasData(UtilityDataBase):
         """ Update instance variables using string (or otherwise specified below) values in str_dict
 
         "real_estate" key must have value RealEstate instance
-        "provider" key can have value string or UtilityProvider instance
+        "provider" key can have value string or ServiceProvider instance
 
         Args:
             see superclass docstring
@@ -81,7 +82,7 @@ class NatGasData(UtilityDataBase):
 
             self.__dict__.update(pair for pair in str_dict.items() if pair[0] in self.__dict__.keys())
             self.real_estate = self.real_estate
-            self.provider = UtilityProvider(self.provider)
+            self.provider = ServiceProvider(self.provider)
             if isinstance(self.month_date, str):
                 self.month_date = datetime.datetime.strptime(self.month_date, "%Y-%m-%d").date()
             self.month_year = self.month_year

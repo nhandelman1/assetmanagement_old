@@ -1,6 +1,5 @@
-"""Module for MySQL Exceptions.
+""" Module for MySQL Exceptions. """
 
-"""
 
 class MySQLException(Exception):
     """MySQL database exceptions chainer.
@@ -13,12 +12,12 @@ class MySQLException(Exception):
             class has already been logged
     """
 
-    def __init__(self, msg, is_logged=True):
+    def __init__(self, msg, is_logged: bool = True):
         """ init
 
         Args:
             msg (str): exception message
-            is_logged (boolean, optional): chained exception has been logged. Default True
+            is_logged (boolean): chained exception has been logged. Default True
         """
         super(MySQLException, self).__init__(msg)
         self.is_logged = is_logged

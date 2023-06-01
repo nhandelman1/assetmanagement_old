@@ -2,6 +2,7 @@
 import mysql.connector
 import traceback
 import pandas as pd
+from typing import Optional, Union
 from Logging.Logger import Logger
 from Database.MySQLException import MySQLException
 from enum import Enum
@@ -50,7 +51,7 @@ class MySQLBase:
             password (str): database password.
             db_name (str): database name.
             fetch_cursor (FetchCursor): how data loaded from tables is returned
-            ssl_ca_path (str, optional): full path to ssl certificate authority file. Default None for certificate
+            ssl_ca_path (Optional[str]): full path to ssl certificate authority file. Default None for no certificate
 
         Raises:
             MySQLException: database connection or cursor creation error is logged then raised as MySQLException with
@@ -74,19 +75,13 @@ class MySQLBase:
     def __enter__(self):
         """ Context manager __enter__.
 
-        Returns: self instance of MySQLBase
-
+        Returns:
+            MySQLBase: self instance of MySQLBase
         """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """ Context manager __exit__. Close database connection and log exception arguments if not None.
-
-        Args:
-            exc_type (exception class):
-            exc_val (exception instance):
-            exc_tb (traceback):
-        """
+        """ Context manager __exit__. Close database connection and log exception arguments if not None. """
         self.db_close()
 
         if exc_type is not None:
@@ -95,9 +90,8 @@ class MySQLBase:
     def __del__(self):
         """ Close database connection.
 
-        Notes:
-            Python does not guarantee that __del__ will be called on "destruction" of the object. User should always
-            call db_close explicitly if not using the class instance in a context manager
+        Python does not guarantee that __del__ will be called on "destruction" of the object. User should always call
+        db_close explicitly if not using the class instance in a context manager
         """
         self.db_close()
 
@@ -133,20 +127,20 @@ class MySQLBase:
                 self.logger.exception("Dict Cursor create exception")
                 raise MySQLException(str(err) + " See log for full trace.") from err
 
-    def build_alias_dict(self, fields, orig_upper=False):
+    def build_alias_dict(self, fields, orig_upper: bool = False):
         """ Create dict mapping original fields (to uppercase) to aliases or original field
 
         Map original fields (tick marks removed, to uppercase) to aliases (if any, tick marks removed) or original
         fields (tick marks removed, if no aliases).
 
         Args:
-            fields (str, list(list/str)): query fields. can either be a str or a list of any combination of lists (with
-                exactly 2 str elements) or str
-            orig_upper (boolean, optional): True: in the returned dict, if value in each key:value pair is the original
+            fields (Union[str, list[str], list[list]]): query fields. can either be a str or a list of any combination
+                of lists (with exactly 2 str elements) or str
+            orig_upper (boolean): True: in the returned dict, if value in each key:value pair is the original
                 field, convert it to uppercase. Default False for no change
 
         Returns:
-            dict mapping original fields (to uppercase) to aliases or original fields
+            dict: mapping original fields (to uppercase) to aliases or original fields
         """
         alias_dict = {}
         if isinstance(fields, (list, tuple)):
@@ -172,14 +166,12 @@ class MySQLBase:
         """Close cursor and dict_cursor and mysql database connection.
 
         Close cursors then close database connection.
+        DB must be connected to close cursors. This usually isn't a problem, but calling this function from __del__
+        causes an exception.
 
         Raises:
             MySQLException: cursor or database close error is logged then raised as MySQLException with
                 is_logged=True.
-
-        Notes:
-            DB must be connected to close cursors. This usually isn't a problem, but calling this function from
-            __del__ causes an exception.
         """
         try:
             if self._DB is not None and self._DB.is_connected():
@@ -198,11 +190,11 @@ class MySQLBase:
 
         Args:
             query (str): SQL query.
-            params (tuple, dict, optional): query parameters. Default None.
-            cursor (boolean, optional): None to use self.dict_cursor. Any other value to use self.cursor. Default None.
+            params (Optional[tuple, dict]): query parameters. Default None.
+            cursor (Optional[boolean]): None to use self.dict_cursor. Any other value to use self.cursor. Default None.
 
         Returns:
-            Results of the query and fetch. list(list), list(dict) or pd.DataFrame depending on self._fetch_cursor
+            Union[list[list], list[dict], pd.DataFrame]: Results of the query and fetch depending on self._fetch_cursor
 
         Raises:
             MySQLException: cursor execute mysql.connector.Error is logged then raised as MySQLException with
@@ -224,7 +216,7 @@ class MySQLBase:
 
         return df_or_list
 
-    def execute_commit(self, query_list, params_list, execute_many=False):
+    def execute_commit(self, query_list, params_list, execute_many: bool = False):
         """Execute one or more insert, update and/or delete then commit.
 
         Multi-purpose execute and commit function. Can be used to execute and commit the following cases:
@@ -234,10 +226,10 @@ class MySQLBase:
                 to the ith parameter element
 
         Args:
-            query_list (str, list(str)): a single query str or a list of query strs.
-            params_list (tuple, dict, list(tuple), list(dict)): query parameters.
-            execute_many (boolean, optional): True to execute the first query in query_list on every element of
-                params_list. False to execute the ith query in query_list on the ith element of params_list.
+            query_list (Union[str, list[str]]): a single query str or a list of query strs.
+            params_list (Union[tuple, dict, list[tuple], list[dict]]): query parameters.
+            execute_many (boolean): True to execute the first query in query_list on every element of params_list.
+                False to execute the ith query in query_list on the ith element of params_list.
 
         Raises:
             ValueError: execute_many is not True but lengths of query_list and params_list are not equal.
@@ -268,6 +260,7 @@ class MySQLBase:
             self.db_rollback(err1)
 
     def db_commit(self):
+        """ Convenice function for self._DB.commit() """
         self._DB.commit()
 
     def db_rollback(self, err1):

@@ -1,10 +1,11 @@
-from Utilities.Electric.View.SolarViewBase import SolarViewBase
+from Services.Electric.View.SolarViewBase import SolarViewBase
 
 
 class SolarConsoleUI(SolarViewBase):
     """ Implementation of SolarBase for use with Console UI """
 
     def __init__(self):
+        """ init function """
         super().__init__()
 
     @staticmethod
@@ -18,7 +19,7 @@ class SolarConsoleUI(SolarViewBase):
     def input_read_new_hourly_data_file(start_date, end_date):
         print("\nGet sunpower hourly data file with data from " + str(start_date) + " through "
               + str(end_date))
-        print("Save file to Utilities -> Electric -> MySunpowerFiles directory.")
+        print("Save file to Services -> Electric -> MySunpowerFiles directory.")
         filename = input("Enter filename: ")
 
         return filename

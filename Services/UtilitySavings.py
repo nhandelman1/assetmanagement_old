@@ -4,8 +4,8 @@ import Util.ExcelUtil as ExcelUtil
 import pandas as pd
 from Database.POPO.ElectricBillData import ElectricBillData
 from Database.POPO.NatGasBillData import NatGasBillData
-from Utilities.Electric.Model.PSEG import PSEG
-from Utilities.NatGas.Model.NG import NG
+from Services.Electric.Model.PSEG import PSEG
+from Services.NatGas.Model.NG import NG
 
 
 class UtilitySavings:
@@ -35,7 +35,7 @@ class UtilitySavings:
         self.final_df holds the final output dataframe with savings by month_year, total and ROI (return on investment)
 
         """
-        pseg_df = self.pseg_model.read_all_monthly_bills_from_db()
+        pseg_df = self.pseg_model.read_all_service_bills_from_db()
         pseg_df = pseg_df[["start_date", "end_date", "is_actual", "total_kwh", "eh_kwh", "total_cost"]]
         pseg_df = pseg_df[pseg_df["is_actual"] == True].merge(pseg_df[pseg_df["is_actual"] == False],
                                       on=["start_date", "end_date"], how="left", suffixes=["_act", "_est"])
@@ -50,7 +50,7 @@ class UtilitySavings:
             lambda row: ElectricBillData.calc_bill_month_year(row[("PSEG", "start_date")], row[("PSEG", "end_date")]),
             axis=1)
 
-        ng_df = self.ng_model.read_all_monthly_bills_from_db()
+        ng_df = self.ng_model.read_all_service_bills_from_db()
         ng_df = ng_df[["start_date", "end_date", "is_actual", "total_therms", "saved_therms", "total_cost"]]
         ng_df = ng_df[ng_df["is_actual"] == True].merge(ng_df[ng_df["is_actual"] == False],
                                       on=["start_date", "end_date"], how="left", suffixes=["_act", "_est"])
@@ -75,7 +75,7 @@ class UtilitySavings:
         self.final_df = f_df
 
     def to_excel(self):
-        """ Write self.final_df to excel file saved in Utilities -> Output directory
+        """ Write self.final_df to excel file saved in Services -> Output directory
 
         Output file name has format: "Utility Savings as of (datetime this function is called).xlsx"
         """

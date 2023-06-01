@@ -394,6 +394,17 @@ create table real_estate (
     zip_code char(5) not null
 );
 
+create table real_property_values (
+	id smallint not null auto_increment primary key,
+    real_estate_id smallint not null,
+    item varchar(100) not null,
+    purchase_date date not null,
+    cost_basis decimal(11, 2) not null,
+    dep_class enum('None', 'GDS-RRP') not null,
+    notes text,
+    foreign key (real_estate_id) references real_estate (id)
+);
+
 create table mysunpower_hourly_data (
 	dt datetime not null primary key,
     solar_kwh decimal(5,2),
@@ -442,6 +453,7 @@ create table electric_bill_data (
     st_cost decimal(4,2),
     toc_total_cost decimal(5,2) not null,
     is_actual boolean not null,
+    paid_date date,
     unique key unique_reid_start_date_actual (real_estate_id, start_date, is_actual),
     unique key unique_reid_end_date_actual (real_estate_id, end_date, is_actual),
     foreign key (real_estate_id) references real_estate (id)
@@ -518,6 +530,7 @@ create table natgas_bill_data (
     pbc_cost decimal(4,2),
     oca_total_cost decimal(5,2) not null,
     is_actual boolean not null,
+    paid_date date,
     unique key unique_reid_start_date_actual (real_estate_id, start_date, is_actual),
     unique key unique_reid_end_date_actual (real_estate_id, end_date, is_actual),
     foreign key (real_estate_id) references real_estate (id)
@@ -550,21 +563,14 @@ create table natgas_data (
     foreign key (real_estate_id) references real_estate (id)
 );
 
-create table real_property_values (
-	id smallint not null auto_increment primary key,
+create table simple_bill_data (
+	id int not null auto_increment primary key,
     real_estate_id smallint not null,
-    item varchar(100) not null,
-    purchase_date date not null,
-    cost_basis decimal(11, 2) not null,
-    dep_class enum('None', 'GDS-RRP') not null,
-    notes text,
+	provider enum('SCWA') not null,
+	start_date date not null,
+    end_date date not null,
+    total_cost decimal(6,2) not null,
+    paid_date date,
     foreign key (real_estate_id) references real_estate (id)
 );
-
-
-
-
-
-
-
 

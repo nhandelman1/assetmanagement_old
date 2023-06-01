@@ -5,6 +5,7 @@ SET SQL_SAFE_UPDATES = 0;
 
 alter table real_estate add column total_kwh smallint;
 select * from real_estate;
+select * from real_property_values;
 select * from mysunpower_hourly_data order by dt desc;
 select * from electric_bill_data;
 select * from electric_data;
@@ -13,6 +14,7 @@ select start_date, end_date from natgas_bill_data where is_actual=1;
 select * from natgas_bill_data;
 select * from natgas_bill_data where start_date = '2023-03-31';
 select * from natgas_data;
+select * from simple_bill_data;
 
 insert into estimate_notes (real_estate_id, provider, note_type, note, note_order) values 
 (1, 'NationalGrid', 'wna_low_rate', 

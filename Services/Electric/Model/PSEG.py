@@ -2,34 +2,44 @@ import datetime
 import pathlib
 import tabula
 import pandas as pd
+from typing import Optional
 from decimal import Decimal
 from Database.MySQLAM import MySQLAM
 from Database.POPO.RealEstate import RealEstate, Address
 from Database.POPO.ElectricBillData import ElectricBillData
 from Database.POPO.ElectricData import ElectricData
-from Database.POPO.UtilityProvider import UtilityProvider
-from Utilities.Model.UtilityModelBase import UtilityModelBase
+from Database.POPO.ServiceProvider import ServiceProvider
+from Services.Model.ComplexServiceModelBase import ComplexServiceModelBase
 
 
-class PSEG(UtilityModelBase):
+class PSEG(ComplexServiceModelBase):
     """ Perform data operations and calculations on PSEG data """
     def __init__(self):
+        """ init function """
         super().__init__()
 
-    def process_monthly_bill(self, filename):
-        """ Open, process and return pseg monthly bill
-
-        self.amb_dict[(bill start date, bill end date)] is set with returned instance of ElectricBillData
-
-        Args:
-            filename (str): name of file in PSEGFiles directory
+    def valid_providers(self):
+        """ Which service providers are valid for this model
 
         Returns:
-            ElectricBillData with all required fields populated and as many non required fields as available populated
+            list[ServiceProvider]: [ServiceProvider.PSEG]
+        """
+        return [ServiceProvider.PSEG]
+
+    def process_service_bill(self, filename):
+        """ Open, process and return pseg monthly bill
+
+        Returned instance of ElectricBillData is added to self.asb_dict
+
+        Args:
+            filename (str): name of file in Services/Electric/PSEGFiles directory
+
+        Returns:
+            ElectricBillData: with all required fields populated and as many non required fields as available populated
         """
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent / ("PSEGFiles/" + filename), pages="all",
                                   password="11720", guess=False)
-        bill_data = ElectricBillData(None, UtilityProvider.PSEG, None, None, None, 0, 0, None, None,
+        bill_data = ElectricBillData(None, ServiceProvider.PSEG, None, None, None, 0, 0, None, None,
                                      None, None, None, True)
 
         # get start date and end date from 1st page
@@ -131,45 +141,46 @@ class PSEG(UtilityModelBase):
                 bill_data.total_cost = fmt_dec(row_split, -1)
 
         bill_data.real_estate = self.read_real_estate_by_address(address)
+        self.asb_dict.insert_bills(bill_data)
 
-        self.amb_dict[(bill_data.start_date, bill_data.end_date)] = bill_data
         return bill_data
 
-    def insert_monthly_bill_to_db(self, bill_data):
-        """ Insert monthly electric bill to table
+    def insert_service_bills_to_db(self, bill_list):
+        """ Insert monthly electric bills to table
 
         Args:
-            bill_data (ElectricBillData): electric bill data to insert
+            bill_list (list[ElectricBillData]): electric bill data to insert
 
         Raises:
-            MySQLException if database insert issue occurs
+            MySQLException: if database insert issue occurs
         """
         with MySQLAM() as mam:
-            mam.electric_bill_data_insert([bill_data])
+            mam.electric_bill_data_insert(bill_list)
 
-    def read_monthly_bill_from_db_by_start_date(self, start_date):
+    def read_service_bill_from_db_by_repsd(self, real_estate, provider, start_date):
         """ read pseg monthly bill from electric_bill_data table by start date
 
-        self.amb_dict[(bill start date, bill end date)] is set with returned instance of ElectricBillData if found
+        Returned instance(s) of ElectricBillData, if found, are added to self.asb_dict
 
         Args:
+            real_estate (RealEstate): real estate location of bill
+            provider (ServiceProvider): service provider of bill
             start_date (datetime.date): start date of bill
 
         Returns:
-            ElectricBillData or None if no bill with start_date
+            list[ElectricBillData]: empty list if no bill matching parameters
 
         Raises:
-            MySQLException if issue with database read
+            MySQLException: if issue with database read
         """
         with MySQLAM() as mam:
             bill_list = mam.electric_bill_data_read(wheres=[["start_date", "=", start_date]])
 
-        bill_data = None if len(bill_list) == 0 else bill_list[0]
-        if bill_data is not None:
-            self.amb_dict[(bill_data.start_date, bill_data.end_date)] = bill_data
-        return bill_data
+        self.asb_dict.insert_bills(bill_list)
 
-    def read_all_monthly_bills_from_db(self):
+        return bill_list
+
+    def read_all_service_bills_from_db(self):
         with MySQLAM() as mam:
             bill_list = mam.electric_bill_data_read()
 
@@ -178,9 +189,9 @@ class PSEG(UtilityModelBase):
         for bill in bill_list:
             df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
             if bill.is_actual:
-                self.amb_dict[(bill.start_date, bill.end_date)] = bill
+                self.asb_dict.insert_bills(bill)
             else:
-                self.emb_dict[(bill.start_date, bill.end_date)] = bill
+                self.esb_dict.insert_bills(bill)
 
         return df.sort_values(by=["start_date", "is_actual"])
 
@@ -191,7 +202,7 @@ class PSEG(UtilityModelBase):
             electric_data (ElectricData): electric data to insert
 
         Raises:
-            MySQLException if database insert issue occurs
+            MySQLException: if database insert issue occurs
         """
         with MySQLAM() as mam:
             mam.electric_data_insert([electric_data])
@@ -205,10 +216,10 @@ class PSEG(UtilityModelBase):
             month_year (str): month and year of data ("MMYYYY" format)
 
         Returns:
-            ElectricData or None if no month_year found
+            Optional[ElectricData]: ElectricData or None if no month_year found
 
         Raises:
-            MySQLException if issue with database read
+            MySQLException: if issue with database read
         """
         with MySQLAM() as mam:
             data_list = mam.electric_data_read(wheres=[["month_year", "=", month_year]])
@@ -221,15 +232,15 @@ class PSEG(UtilityModelBase):
 
         Args:
             real_estate (RealEstate): notes for this real estate
-            provider (UtilityProvider): notes for this electric provider. UtilityProvider.PSEG used in this function
+            provider (ServiceProvider): notes for this electric provider. ServiceProvider.PSEG used in this function
 
         Returns:
-            list(dict) of notes with keys id, real_estate_id, provider, note_type, note
+            list[dict]: of notes with keys id, real_estate_id, provider, note_type, note
 
         Raises:
-            MySQLException if issue with database read
+            MySQLException: if issue with database read
         """
-        return super().read_all_estimate_notes_by_reid_provider(real_estate, UtilityProvider.PSEG)
+        return super().read_all_estimate_notes_by_reid_provider(real_estate, ServiceProvider.PSEG)
 
     def get_utility_data_instance(self, str_dict):
         """ Populate and return ElectricData instance with values in str_dict
@@ -238,33 +249,41 @@ class PSEG(UtilityModelBase):
             str_dict (dict): dict of field keys and str values
 
         Returns:
-            ElectricData instance
+            ElectricData: instance populated with values in str_dict
         """
         return ElectricData(None, None, None, None, None, None, None, str_dict=str_dict)
 
-    def initialize_monthly_bill_estimate(self, start_date, end_date):
+    def initialize_complex_service_bill_estimate(self, address, start_date, end_date, provider=None):
         """ Initialize monthly bill estimate using data from actual bill
 
-        self.emb_dict[(start_date, end_date)] is set with returned instance of ElectricBillData
+        Returned instance of ElectricBillData is added to self.esb_dict
 
         Args:
+            address (Address): address of actual bill
             start_date (datetime.date): start date of actual bill
             end_date (datetime.date): end date of actual bill
+            provider (Optional[ServiceProvider]): Forced to ServiceProvider.PSEG in this function
 
         Returns:
-            ElectricBillData with real_estate, provider, start_date and end_date set with same values as in actual bill
+            ElectricBillData: with real_estate, provider, start_date and end_date set with same values as in actual bill
 
         Raises:
-            ValueError if self.amb_dict does not contain bill data for specified start_date and end_date
+            ValueError: if self.asb_dict does not contain bill data for specified parameters
         """
-        amb = self.amb_dict[(start_date, end_date)]
-        if amb is None:
-            raise ValueError("self.amb_dict does not contain electric bill data for start_date and end_date")
+        provider = ServiceProvider.PSEG
+
+        amb = self.asb_dict.get_bills(addresses=address, providers=provider, start_dates=start_date, end_dates=end_date)
+        if len(amb) == 0:
+            raise ValueError("self.asb_dict doesn't contain electric bill data for: " + str(address) + ", "
+                             + str(provider) + ", " + str(start_date) + ", " + str(end_date))
+        # there should be only one bill in the list
+        amb = amb[0]
 
         bill_data = ElectricBillData(amb.real_estate, amb.provider, amb.start_date, amb.end_date, None, 0, 0, None,
                                      amb.bs_rate, amb.bs_cost, None, None, False)
 
-        self.emb_dict[(start_date, end_date)] = bill_data
+        self.esb_dict.insert_bills(bill_data)
+
         return bill_data
 
     def _do_estimate_total_kwh(self, emb):
@@ -277,17 +296,19 @@ class PSEG(UtilityModelBase):
             emb (ElectricBillData): estimate electric bill data
 
         Returns:
-            emb with total_kwh set appropriately
+            ElectricBillData: emb with total_kwh set appropriately
         """
         emb.total_kwh -= emb.eh_kwh
 
         return emb
 
+    # noinspection PyTypeChecker
     def _do_estimate_dsc(self, emb, ed_start, ed_end):
         """ Estimate delivery and system charges
 
         The bill can span over two months, so have to determine the ratio of the bill for each month. This function
         uses days to calculate the ratio, but this is only estimate since the kwh usage in each day varies.
+
 
         Args:
             emb (ElectricBillData): estimate electric bill data
@@ -295,7 +316,7 @@ class PSEG(UtilityModelBase):
             ed_end (ElectricData): for the later month
 
         Returns:
-            emb with delivery and system charges estimated
+            ElectricBillData: emb with delivery and system charges estimated
         """
         e_rat = Decimal(emb.end_date.day / ((emb.end_date - emb.start_date).days + 1))
         s_rat = 1 - e_rat
@@ -312,6 +333,7 @@ class PSEG(UtilityModelBase):
 
         return emb
 
+    # noinspection PyTypeChecker
     def _do_estimate_psc(self, emb, ed_start, ed_end):
         """ Estimate power supply charges
 
@@ -324,7 +346,7 @@ class PSEG(UtilityModelBase):
             ed_end (ElectricData): for the later month
 
         Returns:
-            emb with power supply charges estimated
+            ElectricBillData: emb with power supply charges estimated
         """
         e_rat = Decimal(emb.end_date.day / ((emb.end_date - emb.start_date).days + 1))
         s_rat = 1 - e_rat
@@ -335,6 +357,7 @@ class PSEG(UtilityModelBase):
 
         return emb
 
+    # noinspection PyTypeChecker
     def _do_estimate_toc(self, emb, ed_start, ed_end, amb):
         """ Estimate taxes and other charges
 
@@ -348,7 +371,7 @@ class PSEG(UtilityModelBase):
             amb (ElectricBillData): actual electric bill data
 
         Returns:
-            emb with taxes and other charges estimated
+            ElectricBillData: emb with taxes and other charges estimated
         """
         e_rat = Decimal(emb.end_date.day / ((emb.end_date - emb.start_date).days + 1))
         s_rat = 1 - e_rat
@@ -387,6 +410,7 @@ class PSEG(UtilityModelBase):
 
         return emb
 
+    # noinspection PyTypeChecker
     def _do_estimate_total_cost(self, emb):
         """ Estimate bill total cost
 
@@ -394,30 +418,42 @@ class PSEG(UtilityModelBase):
             emb (ElectricBillData): estimate electric bill data
 
         Returns:
-            emb with total cost estimated
+            ElectricBillData: emb with total cost estimated
         """
         emb.total_cost = emb.dsc_total_cost + emb.psc_total_cost + emb.toc_total_cost
 
         return emb
 
-    def do_estimate_monthly_bill(self, start_date, end_date):
+    def do_estimate_monthly_bill(self, address, start_date, end_date, provider=None):
         """ Run the process of estimating the monthly bill if solar were not used
 
         Args:
+            address (Address): address of actual bill
             start_date (datetime.date): start date of actual bill
             end_date (datetime.date): end date of actual bill
+            provider (Optional[ServiceProvider]): Forced to ServiceProvider.PSEG in this function
 
         Returns:
-            emb with all applicable estimate fields set
+            ElectricBillData: estimated monthly bill with all applicable estimate fields set
+
+        Raises:
+            ValueError: if self.asb_dict or self.esb_dict or self.data_dict do not contain bill data for specified
+                parameters
         """
-        amb = self.amb_dict.get((start_date, end_date), None)
+        provider = ServiceProvider.PSEG
+
+        amb = self.asb_dict.get_bills(addresses=address, providers=provider, start_dates=start_date, end_dates=end_date)
         ed_start = self.data_dict.get(start_date.strftime("%m%Y"), None)
         ed_end = self.data_dict.get(end_date.strftime("%m%Y"), None)
-        emb = self.emb_dict.get((start_date, end_date), None)
-        if any([x is None for x in [amb, ed_start, ed_end, emb]]):
+        emb = self.esb_dict.get_bills(addresses=address, providers=provider, start_dates=start_date, end_dates=end_date)
+        if len(amb) == 0 or len(emb) == 0 or ed_start is None or ed_end is None:
             raise ValueError("actual monthly bill, start month electric data, end month electric data and estimate " +
-                             "monthly bill for " + str(start_date) + " - " + str(end_date) + " must be set before " +
-                             "calling this function")
+                             "monthly bill for " + str(address) + ", " + str(provider) + ", " + str(start_date) + " - "
+                             + str(end_date) + " must be set before calling this function")
+
+        # there should be only one actual bill and one estimated bill in each of the bill dicts
+        amb = amb[0]
+        emb = emb[0]
 
         emb = self._do_estimate_total_kwh(emb)
         emb = self._do_estimate_dsc(emb, ed_start, ed_end)

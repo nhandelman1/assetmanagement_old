@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 
+
 class SolarViewBase(ABC):
     """ Abstract base view class for Solar data display and input """
 
     @abstractmethod
     def __init__(self):
+        """ init function """
         pass
 
     @staticmethod
@@ -17,7 +19,7 @@ class SolarViewBase(ABC):
             end_date (datetime.date): read file with data ending on this date
 
         Returns:
-            "1" to read sunpower hourly file. anything else to skip reading file
+            str: "1" to read sunpower hourly file. anything else to skip reading file
         """
         raise NotImplementedError("input_read_new_or_skip() not implemented by subclass")
 
@@ -31,6 +33,6 @@ class SolarViewBase(ABC):
             end_date (datetime.date): read file with data ending on this date
 
         Returns:
-            str name of file to read
+            str: name of file to read
         """
         raise NotImplementedError("input_read_new_hourly_data_file() not implemented by subclass")

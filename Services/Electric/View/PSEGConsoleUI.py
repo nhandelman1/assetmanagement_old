@@ -1,10 +1,12 @@
-from Utilities.Electric.View.PSEGViewBase import PSEGViewBase
+from Database.POPO.ServiceProvider import ServiceProvider
+from Services.Electric.View.PSEGViewBase import PSEGViewBase
 
 
 class PSEGConsoleUI(PSEGViewBase):
     """ Implementation of PSEGViewBase for use with PSEG Console UI """
 
     def __init__(self):
+        """ init function """
         super().__init__()
 
     @staticmethod
@@ -15,16 +17,10 @@ class PSEGConsoleUI(PSEGViewBase):
 
     @staticmethod
     def input_read_new_bill():
-        print("\nSave electric bill to Utilities -> Electric -> PSEGFiles directory.")
+        print("\nSave electric bill to Services -> Electric -> PSEGFiles directory.")
         filename = input("Enter electric bill file name (include extension): ")
 
         return filename
-
-    @staticmethod
-    def input_read_existing_bill_start_date():
-        start_date = input("\nEnter bill start date (YYYYMMDD, do not include quotes): ")
-
-        return start_date
 
     @staticmethod
     def display_utility_data_found_or_not(found, month_year):
@@ -42,9 +38,9 @@ class PSEGConsoleUI(PSEGViewBase):
         return el_dict
 
     @staticmethod
-    def input_estimation_data(start_date, end_date):
-        print("Input estimation data for electric bill with start date - end date: " + str(start_date) + " - "
-              + str(end_date))
+    def input_estimation_data(address, start_date, end_date):
+        print("Input estimation data for " + str(ServiceProvider.PSEG.value) + " electric bill at "
+              + str(address.value) + " with start date - end date: " + str(start_date) + " - " + str(end_date))
         eh_kwh = input("Electric heater kwh usage: ")
         return {"eh_kwh": int(eh_kwh)}
 

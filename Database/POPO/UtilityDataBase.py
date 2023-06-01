@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from Database.POPO.RealEstate import RealEstate
-from Database.POPO.UtilityProvider import UtilityProvider
+from Database.POPO.ServiceProvider import ServiceProvider
 
 
 class UtilityDataBase(ABC):
@@ -17,7 +17,7 @@ class UtilityDataBase(ABC):
 
         Args:
             real_estate (RealEstate): real estate data
-            provider (UtilityProvider): electricity provider
+            provider (ServiceProvider): electricity provider
             month_date (datetime.date): date representation for the month of this data
             month_year (str): "MMYYYY" representation for the month of this data
         """
@@ -50,7 +50,7 @@ class UtilityDataBase(ABC):
         if isinstance(db_dict, dict):
             self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
             if isinstance(self.provider, str):
-                self.provider = UtilityProvider(self.provider)
+                self.provider = ServiceProvider(self.provider)
 
     def to_insert_dict(self):
         """ Convert class to dict
@@ -59,7 +59,7 @@ class UtilityDataBase(ABC):
         "real_estate_id" key is added with value = self.real_estate.id
 
         Returns:
-            copy of self.__dict__ with changes described above
+            dict: copy of self.__dict__ with changes described above
         """
         d = self.__dict__.copy()
         d.pop("id", None)

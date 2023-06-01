@@ -1,37 +1,45 @@
 import datetime
+from typing import Optional, Union
 from enum import Enum
 
 
 class QueryWriter:
     """ Formatter for simple single table queries
 
-    Attributes: see __init__ docstring
-
+    Attributes:
+        see __init__ docstring
     """
-    def __init__(self, table, fields=None, distinct=False, wheres=(), order_bys=(), limit=0, date_to_int_date=False,
-                 fields_extra=None):
+    def __init__(self, table, fields=None, distinct=None, wheres=None, order_bys=None, limit=None,
+                 date_to_int_date=None, fields_extra=None):
         """ init QueryWriter
 
         Args:
             table (str): a single table name
-            fields (str, list, optional): Default None. None, (), [] all assume "*". See select_stmt(). None, (), []
-                and "*" not allowed for update statement.
-            distinct (boolean, optional): include distinct keyword in query. Default False.
-            wheres (str, list, optional): Default () (assumes no WHERE statement). See where_stmt()
-            order_bys (str, list, optional): Default () (assumes no ORDER BY statement). See order_by_stmt()
-            limit (int, optional): Default 0 (limit not applied)
-            date_to_int_date (boolean, optional): table may use INT type with format YYYYMMDD for dates instead of the
+            fields (Optional[str, list[str], list[list[str, str]]]): Default None. None, (), [] all assume "*". See
+                self.select_stmt(). None, (), [] and "*" not allowed for update statement.
+            distinct (Optional[boolean]): True to include distinct keyword in query. Default None for False.
+            wheres (Optional[str, list[Union[list[str, str, str], str]]]): See where_stmt().
+                Default None for no where statement
+            order_bys (Optional[str, list[str]]): See order_by_stmt(). Default None for no order by statement
+            limit (Optional[int]): Default None for no limit statement
+            date_to_int_date (Optional[boolean]): table may use INT type with format YYYYMMDD for dates instead of the
                 DATE type. True to convert datetime.date elements to int with format YYYYMMDD in select where stmt,
-                update parameters (both set and where params) and insert parameters. Default False for no conversions
-            fields_extra (str, list, optional): Default None. Certain queries allow for a two sets of fields to be
+                update parameters (both set and where params) and insert parameters. Default None for no conversions
+            fields_extra (Optional[str, list[str]]): Default None. Certain queries allow for two sets of fields to be
                 applied (e.g. INSERT INTO ... ON DUPLICATE UPDATE ..., possibly others)
         """
         if fields in (None, (), []):
             fields = "*"
         if distinct not in (True, False):
             distinct = False
+        if wheres is None:
+            wheres = ()
         if order_bys in (None, (), []):
             order_bys = ""
+        if limit is None:
+            limit = 0
+        if date_to_int_date is None:
+            date_to_int_date = False
 
         self.table = table
         self.fields = fields
@@ -52,7 +60,7 @@ class QueryWriter:
                 e.g. [["col1"], ["col2", "c2"]] yields 'SELECT col1, col2 AS c2'
 
         Returns:
-            str SELECT statement
+            str: SELECT statement
 
         Raises:
             TypeError: fields is not in a valid format
@@ -112,7 +120,7 @@ class QueryWriter:
             [["col1", "=", "^col2^"]] -> "WHERE col1 = col2", ()
                 in contrast to: [["col1", "=", "col2"]] -> "WHERE col1 = %s", ("col2")
         Returns:
-            (str query, tuple params)
+            tuple[str, tuple]: (query, params)
 
         Raises:
             TypeError: wheres is not in a valid format
@@ -202,7 +210,7 @@ class QueryWriter:
                 e.g. ["col1", "col2", "DESC", "col3"] yields 'ORDER BY col1, col2 DESC, col3'
 
         Returns:
-            str ORDER BY statement
+            str: ORDER BY statement
 
         Raises:
             TypeError: order_bys is not in a valid format
@@ -230,7 +238,8 @@ class QueryWriter:
 
         FROM and LIMIT statements are applied in this function.
 
-        Returns: (str query, tuple params)
+        Returns:
+            tuple[str, tuple]: (query, params)
         """
         where_str, params = self.where_stmt()
         query = self.select_stmt() + " FROM " + self.table + " " + where_str + " " + self.order_by_stmt()
@@ -240,39 +249,47 @@ class QueryWriter:
 
         return query, params
 
-    def write_insert_query(self, insert_list, ignore=False):
+    def write_insert_query(self, insert_list, ignore=None):
         """ Compile insert query
 
         enum values in insert_list have .value applied
         datetime.date values converted to int if self.date_to_int_date == True
 
         Args:
-            insert_list (list(list)), list(dict)): insert values. if list, each list must have the same number of
+            insert_list (Union[list[list], list[dict]]): insert values. if list, each list must have the same number of
                 elements as self.fields, if dict, each dict must have the same keys as in self.fields
-            ignore (boolean, optional): True to use insert ignore statement. False to use insert. Default False
+            ignore (Optional[boolean]): True to use insert ignore statement. Default None for False to use insert
+
         Returns:
-            (str query or "0" if insert_list is empty, insert_list with changes applied)
+            tuple[str, Union[list[list], list[dict]]]:
+                (str query or "0" if insert_list is empty, insert_list with changes applied)
 
         Raises:
-            ValueError if any dict or list in insert_list does not match self.fields
-            NotImplementedError if self.fields is a str
+            ValueError: if any dict or list in insert_list does not match self.fields
+            NotImplementedError: if self.fields is a str
         """
+        # noinspection PyTypeChecker
         if len(insert_list) == 0:
             return "0", []
 
         if isinstance(self.fields, str):
             raise NotImplementedError("self.fields as str not implemented")
 
+        if ignore is None:
+            ignore = False
+
         if isinstance(insert_list[0], list):
+            # noinspection PyTypeChecker
             if any([len(lst) != len(self.fields) for lst in insert_list]):
                 raise ValueError("Each list in insert_list must have the same number of elements as self.fields")
-
+            # noinspection PyTypeChecker
             insert_values_str = ("%s, " * len(self.fields))[0:-2]
         else:  # isinstance dict
             f_set = set(self.fields)
+            # noinspection PyTypeChecker
             if any([set(d) != f_set for d in insert_list]):
                 raise ValueError("Each dict in insert_list must have dict.keys() equal to self.fields")
-
+            # noinspection PyTypeChecker
             insert_values_str = ", ".join(["%(" + f + ")s" for f in self.fields])
 
         query = "INSERT " + ("IGNORE" if ignore else "") + " INTO " + self.table + " (" + ", ".join(self.fields) + \
@@ -311,16 +328,16 @@ class QueryWriter:
         any Enum values in set_params and where_params will have .value applied.
 
         Args:
-            set_params (list(list)): list of lists of set values. If where_params is not None, must have same number
+            set_params (list[list]): list of lists of set values. If where_params is not None, must have same number
                 of sub lists as where_params
-            where_params (list(list), optional): list of list of where parameters. If not None, must have same number
+            where_params (Optional[list[list]]): list of list of where parameters. If not None, must have same number
                 of sub lists as set_params
 
-        Returns: (str query, list(list) params)
-            If query == "0", then set_params had length 0
+        Returns:
+            tuple[str, list[list]]: (str query, list(list) params). If query == "0", then set_params had length 0
 
         Raises:
-            ValueError if self.fields or set_params or where_params are not valid
+            ValueError: if self.fields or set_params or where_params are not valid
 
         Example:
             The following will run the same query twice but with different parameter values
@@ -338,6 +355,7 @@ class QueryWriter:
         if self.fields in [None, "*", [], ()]:
             raise ValueError("fields must be a list of field names in table " + self.table)
 
+        # noinspection PyTypeChecker
         if where_params is not None and len(set_params) != len(where_params):
             raise ValueError("Number of sub lists in set_params must equal number of sub lists in where_params")
 
@@ -367,7 +385,6 @@ class QueryWriter:
         final_params = []
         if where_params is not None:
             for i in range(len(set_params)):
-                sp = [x.value if isinstance(x, Enum) else x for x in set_params[i] + where_params[i]]
                 final_params.append([x.value if isinstance(x, Enum) else x for x in set_params[i] + where_params[i]])
 
         if self.date_to_int_date:
@@ -391,7 +408,8 @@ class QueryWriter:
         Insert into table if primary key and unique keys are all not found. Update if any are found.
         If self.fields_extra is None, use fields for both the insert and update statements
 
-        Returns: str query
+        Returns:
+            str: query
         """
         insert_values_str = ("%s, " * len(self.fields))[0:-2]
 
@@ -406,14 +424,19 @@ class QueryWriter:
 
         return query
 
-    def write_delete_query(self, allow_delete_all=False):
+    def write_delete_query(self, allow_delete_all=None):
         """ Compile full delete query as a str and query parameters as a tuple
 
         Args:
-            allow_delete_all (boolean, optional): TRUE to allow empty where statement. Default False.
+            allow_delete_all (Optional[boolean]): True to allow empty where statement. Default None for False.
 
-        Returns: (str query, tuple params). If where clause is empty and allow_delete_all is false, query == "".
+        Returns:
+            tuple[str, tuple]: (str query, tuple params). If where clause is empty and allow_delete_all is false,
+                query == "".
         """
+        if allow_delete_all is None:
+            allow_delete_all = False
+
         where_str, params = self.where_stmt()
         if where_str == "" and not allow_delete_all:
             return "", None

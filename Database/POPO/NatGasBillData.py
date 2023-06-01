@@ -1,8 +1,9 @@
+from typing import Optional
 from decimal import Decimal
-from Database.POPO.UtilityBillDataBase import UtilityBillDataBase
+from Database.POPO.ComplexServiceBillDataBase import ComplexServiceBillDataBase
 
 
-class NatGasBillData(UtilityBillDataBase):
+class NatGasBillData(ComplexServiceBillDataBase):
     """ Actual or estimated data provided on monthly natural gas bill or relevant to monthly bill
 
     Attributes:
@@ -14,14 +15,14 @@ class NatGasBillData(UtilityBillDataBase):
                  oca_total_cost, is_actual, over_therms=None, over_rate=None, over_cost=None, dra_rate=None,
                  dra_cost=None, sbc_rate=None, sbc_cost=None, tac_rate=None, tac_cost=None, bc_cost=None,
                  ds_nysls_rate=None, ds_nysls_cost=None, ds_nysst_rate=None, ds_nysst_cost=None, ss_nysls_rate=None,
-                 ss_nysls_cost=None, ss_nysst_rate=None, ss_nysst_cost=None, pbc_cost=None, db_dict=None):
+                 ss_nysls_cost=None, ss_nysst_rate=None, ss_nysst_cost=None, pbc_cost=None, paid_date=None, notes=None,
+                 db_dict=None):
         """ init function
 
         Args:
             see super class init docstring
             total_therms (int): nonnegative total therms used from provider
             saved_therms (int): nonnegative therms saved by using non nat gas sources (probably electric)
-            total_cost (Decimal): total bill cost
             bsc_therms (Decimal): therms used at basic service charge cost
             bsc_cost (Decimal): basic service charge cost
             next_therms (Decimal): therms used at next rate
@@ -35,36 +36,36 @@ class NatGasBillData(UtilityBillDataBase):
             gs_cost (Decimal): gas supply cost
             ss_total_cost (Decimal): supply service total cost
             oca_total_cost (Decimal): other charges/adjustments total cost
-            over_therms (Decimal, optional): therms used at over/last rate.
+            over_therms (Optional[Decimal]): therms used at over/last rate.
                 If "Next Therms" is in the bill, by "Over/Last Therms", otherwise not used. Default None
-            over_rate (Decimal, optional): over/last rate.
+            over_rate (Optional[Decimal]): over/last rate.
                 If "Next Therms" is in the bill, by "Over/Last Therms", otherwise not used. Default None
-            over_cost (Decimal, optional): over/last cost.
+            over_cost (Optional[Decimal]): over/last cost.
                 If "Next Therms" is in the bill, by "Over/Last Therms", otherwise not used. Default None
-            dra_rate (Decimal, optional): delivery rate adjustment rate. Default None
-            dra_cost (Decimal, optional): delivery rate adjustment cost. Default None
-            sbc_rate (Decimal, optional): system benefits charge rate. Default None
-            sbc_cost (Decimal, optional): system benefits charge cost. Default None
-            tac_rate (Decimal, optional): transportation adjustment charge rate. Default None
-            tac_cost (Decimal, optional): transportation adjustment charge cost. Default None
-            bc_cost (Decimal, optional): billing charge cost. Default None
-            ds_nysls_rate (Decimal, optional): delivery services ny state and local surcharges rate. Default None
-            ds_nysls_cost (Decimal, optional): delivery services ny state and local surcharges cost. Default None
-            ds_nysst_rate (Decimal, optional): delivery services ny state sales tax rate. Default None
-            ds_nysst_cost (Decimal, optional): delivery services ny state sales tax cost. Default None
-            ss_nysls_rate (Decimal, optional): supply services ny state and local surcharges rate. Default None
-            ss_nysls_cost (Decimal, optional): supply services ny state and local surcharges cost. Default None
-            ss_nysst_rate (Decimal, optional): supply services ny state sales tax rate. Default None
-            ss_nysst_cost (Decimal, optional): supply services ny state sales tax cost. Default None
-            pbc_cost (Decimal, optional): paperless billing credit cost. Default None
-            db_dict (dict, optional): dictionary holding arguments. if an argument is in the dictionary, it will
+            dra_rate (Optional[Decimal]): delivery rate adjustment rate. Default None
+            dra_cost (Optional[Decimal]): delivery rate adjustment cost. Default None
+            sbc_rate (Optional[Decimal]): system benefits charge rate. Default None
+            sbc_cost (Optional[Decimal]): system benefits charge cost. Default None
+            tac_rate (Optional[Decimal]): transportation adjustment charge rate. Default None
+            tac_cost (Optional[Decimal]): transportation adjustment charge cost. Default None
+            bc_cost (Optional[Decimal]): billing charge cost. Default None
+            ds_nysls_rate (Optional[Decimal]): delivery services ny state and local surcharges rate. Default None
+            ds_nysls_cost (Optional[Decimal]): delivery services ny state and local surcharges cost. Default None
+            ds_nysst_rate (Optional[Decimal]): delivery services ny state sales tax rate. Default None
+            ds_nysst_cost (Optional[Decimal]): delivery services ny state sales tax cost. Default None
+            ss_nysls_rate (Optional[Decimal]): supply services ny state and local surcharges rate. Default None
+            ss_nysls_cost (Optional[Decimal]): supply services ny state and local surcharges cost. Default None
+            ss_nysst_rate (Optional[Decimal]): supply services ny state sales tax rate. Default None
+            ss_nysst_cost (Optional[Decimal]): supply services ny state sales tax cost. Default None
+            pbc_cost (Optional[Decimal]): paperless billing credit cost. Default None
+            db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
                 overwrite an argument provided explicitly through the argument variable
         """
-        super().__init__(real_estate, provider, start_date, end_date, is_actual)
+        super().__init__(real_estate, provider, start_date, end_date, total_cost, is_actual, paid_date=paid_date,
+                         notes=notes)
 
         self.total_therms = total_therms
         self.saved_therms = saved_therms
-        self.total_cost = total_cost
         self.bsc_therms = bsc_therms
         self.bsc_cost = bsc_cost
         self.next_therms = next_therms

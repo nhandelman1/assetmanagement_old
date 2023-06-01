@@ -1,4 +1,5 @@
 import pandas as pd
+from typing import Optional
 from enum import Enum
 
 
@@ -14,10 +15,10 @@ class Address(Enum):
             str_addr (str): string address
 
         Returns:
-            Address that matches str_addr
+            Address: that matches str_addr
 
         Raises:
-            ValueError if no Address matches str_addr
+            ValueError: if no Address matches str_addr
         """
         str_addr = str_addr.lower()
         if all([x in str_addr for x in ["10", "wagon", "centereach", "ny", "11720"]] +
@@ -27,9 +28,14 @@ class Address(Enum):
 
 
 class RealEstate:
+    """ Real estate data
 
+    Attributes:
+        see init docstring (db_dict not kept as an attribute)
+
+    """
     def __init__(self, address, street_num, street_name, city, state, zip_code, apt=None, db_dict=None):
-        """
+        """ init function
 
         Args:
             address (Address): real estate address
@@ -38,9 +44,9 @@ class RealEstate:
             city (str): city
             state (str): 2 letter state code
             zip_code (str): 5 letter zip code
-            apt (str, optional): apt name or number
-            db_dict (dict): dictionary holding arguments. if an argument is in the dictionary, it will overwrite an
-                argument provided explicitly through the argument variable
+            apt (Optional[str]): apt name or number
+            db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
+                overwrite an argument provided explicitly through the argument variable
         """
         self.id = None
         self.address = address
@@ -60,6 +66,6 @@ class RealEstate:
         """ Convert instance attributes to single row pandas dataframe
 
         Returns:
-            pandas dataframe
+            pd.DataFrame: columns are attributes
         """
         return pd.DataFrame(self.__dict__, index=[0])

@@ -3,6 +3,7 @@
 """
 
 import os
+from typing import Optional, Union
 import pandas as pd
 import openpyxl.utils.cell as OPCellUtil
 import openpyxl.styles as OPStyles
@@ -19,24 +20,27 @@ from openpyxl import load_workbook
 WIDTH_DICT = defaultdict(lambda: 1.1, {"-": 1, "(": 0.5, ")": 0.5, ".": 0.5, ",": 0.5, " ": 1})
 
 
-def calc_cell_width(value=None, left_count=0, right_count=None, comma_fmt=False, neg_fmt=None):
+def calc_cell_width(value=None, left_count: int = 0, right_count=None, comma_fmt=False, neg_fmt=None):
     """ Determine cell width based on arguments
 
     Args:
-        value (str, float, int, None, optional): calc width based on value provided. Default None
+        value (Optional[str, float, int]): calc width based on value provided. Default None
             If value is a str, no other arguments are considered
             If value is an int, comma_fmt and neg_fmt are considered.
             If value is a float, right_count, comma_fmt and neg_fmt are considered.
             If value is None, all other arguments are considered.
-        left_count (int, optional): count of digits to the left of the decimal point. >= 0. Default 0.
-        right_count (int, None, optional): count of digits to the right of the decimal point. >= 0. Default None.
+        left_count (int): count of digits to the left of the decimal point. >= 0. Default 0.
+        right_count (Optional[int]): count of digits to the right of the decimal point. >= 0. Default None.
             If value is None and right_count is None, right_count defaults to 0.
             If value is str or int, right_count is ignored.
             If value is float and right_count is not None, the value of right_count overrides the number of digits
                 in the fractional part of value.
-        comma_fmt (boolean, optional): consider commas when determining number width. Default False
-        neg_fmt (str, optional): negative format to consider for numbers. "-", "()", None. Default None
+        comma_fmt (Optional[boolean]): consider commas when determining number width. Default None for False
+        neg_fmt (Optional[str]): negative format to consider for numbers. "-", "()", None. Default None
     """
+    if comma_fmt is None:
+        comma_fmt = False
+
     width = 0
     use_fmts = True
 
@@ -72,35 +76,38 @@ def calc_cell_width(value=None, left_count=0, right_count=None, comma_fmt=False,
     return width + 0.5
 
 
-def sheet_adj_col_width(sheet, start_row=1, end_row=None, min_width=5, max_width=50, right_count=None,
-                        comma_fmt=False, neg_fmt=None):
+def sheet_adj_col_width(sheet, start_row: int = 1, end_row=None, min_width: float = 5, max_width: float = 50,
+                        right_count=None, comma_fmt=None, neg_fmt=None):
     """ Auto adjust all column widths based on arguments
 
     Args:
-        sheet (openpyxl.worksheet.worksheet.worksheet instance)
-        start_row (int, dict, defaultdict, optional): Default 1
+        sheet (openpyxl.worksheet.worksheet.worksheet):
+        start_row (Union[int, dict, defaultdict]): Default 1
             int for all columns to start width calculations at this row
             dict to start width calculation for the specified column (key) at specified row (value). Columns not
                 included as keys will start at row 1. e.g. {"A": 1, "C": 2}
             defaultdict for dict with caller specified row for missing keys
-        end_row (int, dict, None, optional): Default None
+        end_row (Optional[int, dict]): Default None
             None for all columns to end width calculations at the last row in each column
             int for all columns to end width calculations at this row
             dict to end width calculation for the specified column (key) at specified row (value). For columns not
                 included as keys, calculation ends at last row in each of those columns. e.g. {"A": 1, "C": 2}
             defaultdict for dict with caller specified row for missing keys
-        min_width (float, defaultdict, optional): Default 5
+        min_width (Union[float, defaultdict]): Default 5
             defaultdict to set by column (key) the min width (value) with caller specified min width for missing keys
-        max_width (float, defaultdict, optional): Default 50
+        max_width (Union[float, defaultdict]): Default 50
             defaultdict to set by column (key) the max width (value) with caller specified max width for missing keys
-        right_count (int, defaultdict, None, optional): For numeric columns, consider this many fractional digits.
+        right_count (Optional[int, defaultdict]): For numeric columns, consider this many fractional digits.
             For default None, use the fractional part of the value in each cell in the column
             defaultdict to set by column (key) the count (value) with caller specified count for missing keys
-        comma_fmt (boolean, defaultdict, optional): For numeric columns, consider commas. Default False.
+        comma_fmt (Optional[boolean, defaultdict]): For numeric columns, consider commas. Default None for False.
             defaultdict to set by column (key) the boolean (value) with caller specified boolean for missing keys
-        neg_fmt (str, defaultdict, None, optional): For numeric columns, consider "-", "()", None fmts. Default None.
+        neg_fmt (Optional[str, defaultdict]): For numeric columns, consider "-", "()", None fmts. Default None.
             defaultdict to set by column (key) the format (value) with caller specified format for missing keys
     """
+    if comma_fmt is None:
+        comma_fmt = False
+
     def help_1(arg, def_val=None):
         b = isinstance(arg, dict)
         if b:
@@ -153,15 +160,18 @@ def sheet_adj_col_width(sheet, start_row=1, end_row=None, min_width=5, max_width
         sheet.column_dimensions[col_letter].width = col_w
 
 
-def df_to_file_sheet(df, file_name, sheet_name, ret_writer=False):
+def df_to_file_sheet(df, file_name, sheet_name, ret_writer: bool = False):
     """ Write pandas dataframe to excel file and sheet
 
     Args:
-        df (pandas.DataFrame)
-        file_name (str)
-        sheet_name (str)
-        ret_writer (boolean, optional): True to leave writer open and return instance. False to close writer and return
-            None. Default False
+        df (pd.DataFrame): df to write to file
+        file_name (str): name of output file
+        sheet_name (str): name of output sheet in file
+        ret_writer (boolean): True to leave writer open and return instance. False to close writer and return None.
+            Default False
+
+    Returns:
+        Optional[pd.ExcelWriter]: dependent on value of ret_writer
     """
     if os.path.exists(file_name):
         # keep lines in this order
@@ -180,8 +190,16 @@ def df_to_file_sheet(df, file_name, sheet_name, ret_writer=False):
         writer.close()
 
 
-def clean_file_name(file_name, rep=" "):
-    """ Replace disallowed excel file name characters with rep """
+def clean_file_name(file_name, rep: str = " "):
+    """ Replace disallowed excel file name characters with rep
+
+    Args:
+        file_name (str): name of file
+        rep (str): replace disallowed characters with this value. Default " "
+
+    Returns:
+        str: file_name with disallowed characters replaced with rep
+    """
     lst = ["\\", "/", ":", "*", "?", "\"", "<", ">", "|"]
     rd = defaultdict(lambda: rep)
 
@@ -242,8 +260,7 @@ class CellStyle:
 
     Attributes:
         See __init__ docstring
-        cell_list: list(str), e.g. ["A1", "C5"]
-
+        cell_list (list[str]): e.g. ["A1", "C5"]
     """
     # TODO implement border, font
     # TODO apply styles without overriding existing styles
@@ -254,16 +271,17 @@ class CellStyle:
         Any optional arguments left as None will not be applied.
 
         Args:
-            sheet (openpyxl.worksheet.worksheet.Worksheet)
-            alignment (openpyxl.styles.alignment, optional): text alignment in cell
-            border (openpyxl.styles.borders optional)
-            fill (openpyxl.styles.fills, openpyxl.styles.GradientFill, optional):
+            sheet (openpyxl.worksheet.worksheet.Worksheet):
+            alignment (Optional[openpyxl.styles.alignment]): text alignment in cell
+            border (Optional[openpyxl.styles.borders]): not implemented
+            fill (Optional[openpyxl.styles.fills, openpyxl.styles.GradientFill]):
                 The 'Color' options are for the background color only.
-            num_fmt (NumFmt, optional): number format. Default None for "General" format
-            horiz (Horiz, optional): overrides alignment horizontal if alignment is not None
-            vert (Vert, optional): overrides alignment vertical if alignment is not None
-            fill_color (openpyxl.styles.Color, Color, optional): overrides fill start_color and end_color if fill is not None
-
+            font (Optional[openpyxl.styles.fonts]): not implemented
+            num_fmt (Optional[NumFmt]): number format. Default None for "General" format
+            horiz (Optional[Horiz]): overrides alignment horizontal if alignment is not None
+            vert (Optional[Vert]): overrides alignment vertical if alignment is not None
+            fill_color (Optional[openpyxl.styles.Color, Color]): overrides fill start_color and end_color if fill is
+                not None
         """
         self.sheet = sheet
 
@@ -294,16 +312,16 @@ class CellStyle:
 
         self.cell_list = []
 
-    def rows(self, rows, start_col="A", end_col=None):
+    def rows(self, rows, start_col: str = "A", end_col=None):
         """ Add specified cells to cell list
 
         Args:
-            rows (int, list(int))
-            start_col (str, int, optional): Default "A".
-            end_col (str, int, None, optional): None for all columns in each row. Default None.
+            rows (Union[int, list[int]])
+            start_col (Union[str, int]): Default "A".
+            end_col (Optional[str, int]): None for all columns in each row. Default None.
 
         Returns:
-            self for chaining function calls
+            CellStyle: self for chaining function calls
         """
         if isinstance(rows, int):
             rows = [rows]
@@ -320,16 +338,16 @@ class CellStyle:
 
         return self
 
-    def cols(self, cols, start_row=1, end_row=None):
+    def cols(self, cols, start_row: int = 1, end_row=None):
         """ Add specified cells to cell list
 
         Args:
-            cols (str, int, list(str), list(int))
-            start_row (int, optional): Default 0.
-            end_row (int, None, optional): None for all rows in column. Default None.
+            cols (Union[str, int, list[str], list[int]]):
+            start_row (int): Default 1.
+            end_row (Optional[int]): None for all rows in column. Default None.
 
         Returns:
-            self for chaining function calls
+            CellStyle: self for chaining function calls
         """
         if isinstance(cols, int):
             cols = [OPCellUtil.get_column_letter(cols)]
@@ -343,14 +361,14 @@ class CellStyle:
         return self
 
     def cells(self, cells):
-        """ SAdd specified cells to cell list
+        """ Add specified cells to cell list
 
         Args:
-            cells (str, list(str), list(int, int), list(list)): str format "A1" or list(int, int) format [row#, col#]
-                or list(list) format [[row #, col#],...]
+            cells (Union[str, list[str], list[int, int], list[list[int, int]]]): str format "A1" or list(int, int)
+                format [row#, col#] or list(list) format [[row #, col#],...]
 
         Returns:
-            self for chaining function calls
+            CellStyle: self for chaining function calls
         """
         if isinstance(cells, str):
             self.cell_list.append(cells)
@@ -365,6 +383,7 @@ class CellStyle:
         return self
 
     def apply(self):
+        """ Apply styling to all cells in self.cell_list """
         for coord in self.cell_list:
             cell = self.sheet[coord]
 

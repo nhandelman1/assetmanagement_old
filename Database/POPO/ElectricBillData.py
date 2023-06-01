@@ -1,8 +1,9 @@
 from decimal import Decimal
-from Database.POPO.UtilityBillDataBase import UtilityBillDataBase
+from typing import Optional
+from Database.POPO.ComplexServiceBillDataBase import ComplexServiceBillDataBase
 
 
-class ElectricBillData(UtilityBillDataBase):
+class ElectricBillData(ComplexServiceBillDataBase):
     """ Actual or estimated data provided on monthly electric bill or relevant to monthly bill
 
     Attributes:
@@ -16,7 +17,7 @@ class ElectricBillData(UtilityBillDataBase):
                  mfc_cost=None, psc_rate=None, psc_cost=None, psc_total_cost=None, der_rate=None, der_cost=None,
                  dsa_rate=None, dsa_cost=None, rda_rate=None, rda_cost=None, nysa_rate=None, nysa_cost=None,
                  rbp_rate=None, rbp_cost=None, spta_rate=None, spta_cost=None, st_rate=None, st_cost=None,
-                 db_dict=None):
+                 paid_date=None, notes=None, db_dict=None):
         """ init function
 
         Args:
@@ -24,47 +25,46 @@ class ElectricBillData(UtilityBillDataBase):
             total_kwh (int): nonnegative total kwh used from provider
             eh_kwh (int): electric heater kwh usage
             bank_kwh (int): nonnegative banked kwh
-            total_cost (Decimal): total bill cost
             bs_rate (Decimal): basic service charge rate
             bs_cost (Decimal): basic service charge cost
             dsc_total_cost (Decimal): delivery and service charge total cost
             toc_total_cost (Decimal): taxes and other charges total cost
-            first_kwh (int, optional): kwh used at first rate. will not be in bill if none used. Default None
-            first_rate (Decimal, optional): first rate. will not be in bill if none used. Default None
-            first_cost (Decimal, optional): first cost. will not be in bill if none used. Default None
-            next_kwh (int, optional): kwh used at next rate. will not be in bill if none used. Default None
-            next_rate (Decimal, optional): next rate. will not be in bill if none used. Default None
-            next_cost (Decimal, optional): next cost. will not be in bill if none used. Default None
-            cbc_rate (Decimal, optional): customer benefit contribution charge rate. Default None
-            cbc_cost (Decimal, optional): customer benefit contribution charge cost. Default None
-            mfc_rate (Decimal, optional): merchant function charge rate. Default None
-            mfc_cost (Decimal, optional): merchant function charge cost. Default None
-            psc_rate (Decimal, optional): power supply charge rate. Default None
-            psc_cost (Decimal, optional): power supply charge cost. Default None
-            psc_total_cost (Decimal, optional): power supply charge total cost. Default None
-            der_rate (Decimal, optional): distributed energy resources charge rate. Default None
-            der_cost (Decimal, optional): distributed energy resources charge cost. Default None
-            dsa_rate (Decimal, optional): delivery service adjustment rate. Default None
-            dsa_cost (Decimal, optional): delivery service adjustment cost. Default None
-            rda_rate (Decimal, optional): revenue decoupling adjustment rate. Default None
-            rda_cost (Decimal, optional): revenue decoupling adjustment cost. Default None
-            nysa_rate (Decimal, optional): new york state assessment rate. Default None
-            nysa_cost (Decimal, optional): new york state assessment cost. Default None
-            rbp_rate (Decimal, optional): revenue based pilots rate. Default None
-            rbp_cost (Decimal, optional): revenue based pilots cost. Default None
-            spta_rate (Decimal, optional): revenue decoupling adjustment rate. Default None
-            spta_cost (Decimal, optional): suffolk property tax adjustment cost. Default None
-            st_rate (Decimal, optional): sales tax rate. Default None
-            st_cost (Decimal, optional): sales tax cost. Default None
-            db_dict (dict, optional): dictionary holding arguments. if an argument is in the dictionary, it will
+            first_kwh (Optional[int]): kwh used at first rate. will not be in bill if none used. Default None
+            first_rate (Optional[Decimal]): first rate. will not be in bill if none used. Default None
+            first_cost (Optional[Decimal]): first cost. will not be in bill if none used. Default None
+            next_kwh (Optional[int]): kwh used at next rate. will not be in bill if none used. Default None
+            next_rate (Optional[Decimal]): next rate. will not be in bill if none used. Default None
+            next_cost (Optional[Decimal]): next cost. will not be in bill if none used. Default None
+            cbc_rate (Optional[Decimal]): customer benefit contribution charge rate. Default None
+            cbc_cost (Optional[Decimal]): customer benefit contribution charge cost. Default None
+            mfc_rate (Optional[Decimal]): merchant function charge rate. Default None
+            mfc_cost (Optional[Decimal]): merchant function charge cost. Default None
+            psc_rate (Optional[Decimal]): power supply charge rate. Default None
+            psc_cost (Optional[Decimal]): power supply charge cost. Default None
+            psc_total_cost (Optional[Decimal]): power supply charge total cost. Default None
+            der_rate (Optional[Decimal]): distributed energy resources charge rate. Default None
+            der_cost (Optional[Decimal]): distributed energy resources charge cost. Default None
+            dsa_rate (Optional[Decimal]): delivery service adjustment rate. Default None
+            dsa_cost (Optional[Decimal]): delivery service adjustment cost. Default None
+            rda_rate (Optional[Decimal]): revenue decoupling adjustment rate. Default None
+            rda_cost (Optional[Decimal]): revenue decoupling adjustment cost. Default None
+            nysa_rate (Optional[Decimal]): new york state assessment rate. Default None
+            nysa_cost (Optional[Decimal]): new york state assessment cost. Default None
+            rbp_rate (Optional[Decimal]): revenue based pilots rate. Default None
+            rbp_cost (Optional[Decimal]): revenue based pilots cost. Default None
+            spta_rate (Optional[Decimal]): revenue decoupling adjustment rate. Default None
+            spta_cost (Optional[Decimal]): suffolk property tax adjustment cost. Default None
+            st_rate (Optional[Decimal]): sales tax rate. Default None
+            st_cost (Optional[Decimal]): sales tax cost. Default None
+            db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
                 overwrite an argument provided explicitly through the argument variable
         """
-        super().__init__(real_estate, provider, start_date, end_date, is_actual)
+        super().__init__(real_estate, provider, start_date, end_date, total_cost, is_actual, paid_date=paid_date,
+                         notes=notes)
 
         self.total_kwh = total_kwh
         self.eh_kwh = eh_kwh
         self.bank_kwh = bank_kwh
-        self.total_cost = total_cost
         self.bs_rate = bs_rate
         self.bs_cost = bs_cost
         self.first_kwh = first_kwh
