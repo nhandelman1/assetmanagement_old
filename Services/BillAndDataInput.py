@@ -1,18 +1,23 @@
 import datetime
+import colorama
 from Database.POPO.RealEstate import RealEstate
 from Database.POPO.ServiceProvider import ServiceProvider
 from Database.POPO.SimpleServiceBillData import SimpleServiceBillData
 from Database.POPO.ComplexServiceBillDataBase import ComplexServiceBillDataBase
+from Database.POPO.SolarBillData import SolarBillData
 from Database.POPO.ElectricBillData import ElectricBillData
 from Database.POPO.NatGasBillData import NatGasBillData
 from Database.POPO.UtilityDataBase import UtilityDataBase
+from Database.POPO.MortgageBillData import MortgageBillData
 from Services.Simple.Model.SimpleServiceModel import SimpleServiceModel
+from Services.Simple.View.SimpleViewBase import SimpleViewBase
 from Services.Model.ComplexServiceModelBase import ComplexServiceModelBase
 from Services.Electric.Model.PSEG import PSEG
 from Services.Electric.Model.Solar import Solar
 from Services.NatGas.Model.NG import NG
-from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
 from Services.View.ComplexServiceViewBase import ComplexServiceViewBase
+from Services.Mortgage.Model.MS import MS
+from Services.Mortgage.View.MortgageViewBase import MortgageViewBase
 from Services.Electric.View.PSEGViewBase import PSEGViewBase
 from Services.Electric.View.SolarViewBase import SolarViewBase
 from Services.NatGas.View.NGViewBase import NGViewBase
@@ -25,42 +30,81 @@ class BillAndDataInput:
         see init function docstring
     """
 
-    def __init__(self, simple_model, simple_view, pseg_model, pseg_view, solar_model, solar_view, ng_model, ng_view):
+    def __init__(self, simple_model, simple_view, mortgage_model, mortgage_view, solar_model, solar_view, pseg_model,
+                 pseg_view, ng_model, ng_view):
         """ init function
 
         Args:
             simple_model (SimpleServiceModel):
-            simple_view (SimpleServiceViewBase):
-            pseg_model (PSEG):
-            pseg_view (PSEGViewBase): a subclass since base has no implemented functions
+            simple_view (SimpleViewBase):
+            mortgage_model (MS):
+            mortgage_view (MortgageViewBase):
             solar_model (Solar):
             solar_view (SolarViewBase): a subclass since base has no implemented functions
+            pseg_model (PSEG):
+            pseg_view (PSEGViewBase): a subclass since base has no implemented functions
             ng_model (NG):
             ng_view (NGViewBase): a subclass since base has no implemented functions
         """
         self.simple_model = simple_model
         self.simple_view = simple_view
-        self.pseg_model = pseg_model
-        self.pseg_view = pseg_view
+        self.mortgage_model = mortgage_model
+        self.mortgage_view = mortgage_view
         self.solar_model = solar_model
         self.solar_view = solar_view
+        self.pseg_model = pseg_model
+        self.pseg_view = pseg_view
         self.ng_model = ng_model
         self.ng_view = ng_view
 
     def do_simple_bill_process(self):
-        """ Run process to input data for simple bills
+        """ Run process to input or read simple bill data and store data to table
 
         Returns:
-            list[SimpleServiceBillData]: list with instance of bill data. there may be other bill data instances that
-                have the same real estate, provider and start date
+            list[SimpleServiceBillData]: there may be other bill data instances that have the same real estate, provider
+                and start date so a list is used
         """
-        filename = self.simple_view.input_read_new_bill()
+        opt = self.simple_view.input_choose_input_data_or_read_bill()
+        if opt == "1":
+            re_dict = self.simple_model.read_all_real_estate()
+            sp_dict = self.simple_model.read_valid_service_providers()
+            bill_data = self.simple_view.input_bill_data(re_dict, sp_dict)
+            filename = self.simple_model.save_to_file(bill_data)
+        else:  # opt == "2"
+            filename = self.simple_view.input_read_new_bill()
         bill_data = self.simple_model.process_service_bill(filename)
         self.simple_model.insert_service_bills_to_db([bill_data])
-        bill_data = self.simple_model.read_service_bill_from_db_by_repsd(
-            bill_data.real_estate, bill_data.provider, bill_data.start_date)
+        bill_list = self.simple_model.read_service_bill_from_db_by_repsd(
+            bill_data.real_estate, bill_data.service_provider, bill_data.start_date)
 
-        return bill_data
+        self.simple_model.clear_model()
+
+        return bill_list
+
+    def do_solar_bill_process(self):
+        """ Run process to input data for solar bills and solar kwh usage
+
+        Returns:
+            list[SolarBillData]: list with instance of bill data. there may be other bill data instances that
+                have the same real estate, service provider and start date
+        """
+        self.solar_view.display_bill_preprocess_warning()
+        bill_filename = self.solar_view.input_read_new_bill()
+        start_date, end_date, df = self.solar_model.process_service_bill_dates(bill_filename)
+        opt = self.solar_view.input_read_new_hourly_data_file_or_skip(start_date, end_date)
+        if opt == "1":
+            hourly_filename = self.solar_view.input_read_new_hourly_data_file(start_date, end_date)
+            df = self.solar_model.process_sunpower_hourly_file(hourly_filename)
+            self.solar_model.insert_sunpower_hourly_data_to_db(df)
+        bill_data = self.solar_model.process_service_bill(bill_filename)
+        self.solar_model.insert_service_bills_to_db([bill_data])
+
+        bill_list = self.solar_model.read_service_bill_from_db_by_repsd(
+            bill_data.real_estate, bill_data.service_provider, bill_data.start_date)
+
+        self.solar_model.clear_model()
+
+        return bill_list
 
     def process_or_load_actual_complex_bill(self, model, view):
         """ Read actual service bill from file and store to db or load from db
@@ -78,39 +122,27 @@ class BillAndDataInput:
             bill_data = model.process_service_bill(filename)
             model.insert_service_bills_to_db([bill_data])
             real_estate = bill_data.real_estate
-            provider = bill_data.provider
+            service_provider = bill_data.service_provider
             start_date = bill_data.start_date
         else:
             re_dict = model.read_all_real_estate()
-            re_id = view.input_select_existing_bill_real_estate(re_dict)
+            re_id = view.input_select_real_estate(re_dict)
             real_estate = re_dict[re_id]
-            provider = view.input_select_existing_bill_provider(model.valid_providers())
-            start_date = view.input_read_existing_bill_start_date()
-            start_date = datetime.datetime.strptime(start_date, "%Y%m%d").date()
+            sp_dict = model.read_valid_service_providers()
+            sp_id = view.input_select_service_provider(sp_dict)
+            service_provider = sp_dict[sp_id]
+            start_date = view.input_bill_date()
 
-        bill_data = model.read_service_bill_from_db_by_repsd(real_estate, provider, start_date)
+        bill_data = model.read_service_bill_from_db_by_repsd(real_estate, service_provider, start_date)
         # only one bill will match
         return bill_data[0]
 
-    def process_sunpower_hourly_data_file(self, start_date, end_date):
-        """ Read sunpower hourly data from file and store to db or skip if data already stored
-
-        Args:
-            start_date (datetime.date): file should have data starting on this date
-            end_date (datetime.date): file should have data ending on this date
-        """
-        opt = self.solar_view.input_read_new_or_skip(start_date, end_date)
-        if opt == "1":
-            filename = self.solar_view.input_read_new_hourly_data_file(start_date, end_date)
-            df = self.solar_model.process_sunpower_hourly_file(filename)
-            self.solar_model.insert_sunpower_hourly_data_to_db(df)
-
-    def input_or_load_utility_data(self, real_estate, provider, date, model, view):
+    def input_or_load_utility_data(self, real_estate, service_provider, date, model, view):
         """ Input utility data and store to db or load from db
 
         Args:
             real_estate (RealEstate): bill for this real estate
-            provider (ServiceProvider): utility provider
+            service_provider (ServiceProvider): utility provider
             date (datetime.date): run function for utility data for this month and year (day is ignored)
             model (ComplexServiceModelBase): subclass
             view (ComplexServiceViewBase): subclass
@@ -122,10 +154,10 @@ class BillAndDataInput:
         utility_data = model.read_monthly_data_from_db_by_month_year(month_year)
 
         if utility_data is None:
-            notes_list = model.read_all_estimate_notes_by_reid_provider(real_estate, provider)
+            notes_list = model.read_all_estimate_notes_by_reid_provider(real_estate, service_provider)
             view.display_utility_data_found_or_not(False, month_year)
             el_dict = view.input_values_for_notes(notes_list)
-            el_dict.update({"real_estate": real_estate, "provider": provider, "month_date": date,
+            el_dict.update({"real_estate": real_estate, "service_provider": service_provider, "month_date": date,
                             "month_year": month_year})
 
             utility_data = model.get_utility_data_instance(el_dict)
@@ -145,8 +177,8 @@ class BillAndDataInput:
             end_date (datetime.date): end date of an actual bill. will be the end date of the estimated bill
 
         Returns:
-            ElectricBillData: instance of estimated monthly bill with real_estate, provider, start_date, end_date,
-            total_kwh, eh_kwh set
+            ElectricBillData: instance of estimated monthly bill with real_estate, service provider, start_date,
+            end_date, total_kwh, eh_kwh set
         """
         estimate_bill_data = self.pseg_model.initialize_complex_service_bill_estimate(address, start_date, end_date)
         kwh_dict = self.solar_model.calculate_total_kwh_between_dates(estimate_bill_data.start_date,
@@ -162,11 +194,9 @@ class BillAndDataInput:
         """ Run process to input data and calculate savings for electric utilities """
         amb = self.process_or_load_actual_complex_bill(self.pseg_model, self.pseg_view)
 
-        self.process_sunpower_hourly_data_file(amb.start_date, amb.end_date)
-
-        ed_sm = self.input_or_load_utility_data(amb.real_estate, amb.provider, amb.start_date, self.pseg_model,
+        ed_sm = self.input_or_load_utility_data(amb.real_estate, amb.service_provider, amb.start_date, self.pseg_model,
                                                 self.pseg_view)
-        ed_em = self.input_or_load_utility_data(amb.real_estate, amb.provider, amb.end_date, self.pseg_model,
+        ed_em = self.input_or_load_utility_data(amb.real_estate, amb.service_provider, amb.end_date, self.pseg_model,
                                                 self.pseg_view)
 
         # gather estimation data available elsewhere and enter estimation data otherwise not available
@@ -175,6 +205,8 @@ class BillAndDataInput:
         # do bill estimate calculation
         emb = self.pseg_model.do_estimate_monthly_bill(amb.real_estate.address, amb.start_date, amb.end_date)
         self.pseg_model.insert_service_bills_to_db([emb])
+
+        self.pseg_model.clear_model()
 
     def input_and_load_natgas_estimation_data(self, address, start_date, end_date):
         """ Load natural gas estimation data already available and input any missing data
@@ -185,7 +217,7 @@ class BillAndDataInput:
             end_date (datetime.date): end date of an actual bill. will be the end date of the estimated bill
 
         Returns:
-            NatGasBillData: instance of estimated monthly bill with real_estate, provider, start_date, end_date,
+            NatGasBillData: instance of estimated monthly bill with real_estate, service_provider, start_date, end_date,
             bsc_therms, bsc_cost, gs_rate
         """
         estimate_bill_data = self.ng_model.initialize_complex_service_bill_estimate(address, start_date, end_date)
@@ -198,9 +230,9 @@ class BillAndDataInput:
     def do_natgas_process(self):
         """ Run process to input data and calculate savings for natural gas utilities """
         amb = self.process_or_load_actual_complex_bill(self.ng_model, self.ng_view)
-        ngd_sm = self.input_or_load_utility_data(amb.real_estate, amb.provider, amb.start_date, self.ng_model,
+        ngd_sm = self.input_or_load_utility_data(amb.real_estate, amb.service_provider, amb.start_date, self.ng_model,
                                                  self.ng_view)
-        ngd_em = self.input_or_load_utility_data(amb.real_estate, amb.provider, amb.end_date, self.ng_model,
+        ngd_em = self.input_or_load_utility_data(amb.real_estate, amb.service_provider, amb.end_date, self.ng_model,
                                                  self.ng_view)
 
         # gather estimation data available elsewhere and enter estimation data otherwise not available
@@ -210,9 +242,66 @@ class BillAndDataInput:
         emb = self.ng_model.do_estimate_monthly_bill(amb.real_estate.address, amb.start_date, amb.end_date)
         self.ng_model.insert_service_bills_to_db([emb])
 
+        self.ng_model.clear_model()
+
+    def do_mortgage_bill_process(self):
+        """ Run process to read mortgage bills and store data to table
+
+        Returns:
+            list[MortgageBillData]: there may be other bill data instances that have the same real estate, provider and
+                start date so a list is used
+        """
+        filename = self.mortgage_view.input_read_new_bill()
+        bill_data = self.mortgage_model.process_service_bill(filename)
+        self.mortgage_model.insert_service_bills_to_db([bill_data])
+        bill_list = self.mortgage_model.read_service_bill_from_db_by_repsd(
+            bill_data.real_estate, bill_data.service_provider, bill_data.start_date)
+
+        self.mortgage_model.clear_model()
+
+        return bill_list
+
     def do_paid_date_process(self):
         """ Run process to input paid date for any bills missing a paid date """
-        pass
+
+        while True:
+            try:
+                print("######################################################################")
+                print("Choose a bill option from the following:\n")
+                print("1: Simple Bill Paid Dates")
+                print("2: Solar Bill Paid Dates")
+                print("3: Electric Bill Paid Dates")
+                print("4: Natural Gas Bill Paid Dates")
+                print("5: Mortgage Bill Paid Dates")
+                print("0: Return to Main Menu")
+                opt = input("\nSelection: ")
+
+                if opt in ["1", "2", "3", "4", "5"]:
+                    if opt == "1":
+                        (model, view) = (self.simple_model, self.simple_view)
+                    elif opt == "2":
+                        (model, view) = (self.solar_model, self.solar_view)
+                    elif opt == "3":
+                        (model, view) = (self.pseg_model, self.pseg_view)
+                    elif opt == "4":
+                        (model, view) = (self.ng_model, self.ng_view)
+                    else:  # opt == "5":
+                        (model, view) = (self.mortgage_model, self.mortgage_view)
+
+                    unpaid_bill_list = model.read_all_service_bills_from_db_unpaid()
+                    if len(unpaid_bill_list) > 0:
+                        unpaid_bill_list = view.input_paid_dates(unpaid_bill_list)
+                        model.update_service_bills_in_db_paid_date_by_id(unpaid_bill_list)
+                    else:
+                        print("No unpaid bills")
+                    model.clear_model()
+                elif opt == "0":
+                    break
+                else:
+                    print(opt + " is not a valid option. Try again.")
+            except Exception as ex:
+                print(colorama.Fore.RED, str(ex))
+                print(colorama.Style.RESET_ALL)
 
     def do_main_menu_console_process(self):
         """ Run main menu process through console to select bill related process options """
@@ -222,23 +311,30 @@ class BillAndDataInput:
                 print("######################################################################")
                 print("Choose a bill or data option from the following:\n")
                 print("1: Input Simple Bill")
-                print("2: Input Electric Bill and Related Data")
-                print("3: Input Natural Gas Bill and Related Data")
-                print("4: Input Missing Paid Dates")
+                print("2: Input Solar Bill")
+                print("3: Input Electric Bill and Related Data")
+                print("4: Input Natural Gas Bill and Related Data")
+                print("5: Input Mortgage Bill")
+                print("6: Input Missing Paid Dates")
                 print("0: Exit Program")
                 opt = input("\nSelection: ")
 
                 if opt == "1":
                     self.do_simple_bill_process()
                 elif opt == "2":
-                    self.do_electric_process()
+                    self.do_solar_bill_process()
                 elif opt == "3":
-                    self.do_natgas_process()
+                    self.do_electric_process()
                 elif opt == "4":
+                    self.do_natgas_process()
+                elif opt == "5":
+                    self.do_mortgage_bill_process()
+                elif opt == "6":
                     self.do_paid_date_process()
                 elif opt == "0":
                     break
                 else:
-                    print(opt + " is not a valid option. Try again faggot.")
+                    print(opt + " is not a valid option. Try again.")
             except Exception as ex:
-                print(str(ex))
+                print(colorama.Fore.RED, str(ex))
+                print(colorama.Style.RESET_ALL)

@@ -2,13 +2,13 @@ import datetime
 import pathlib
 import tabula
 import pandas as pd
-from typing import Optional
+from typing import Optional, Union
 from decimal import Decimal
 from Database.MySQLAM import MySQLAM
 from Database.POPO.RealEstate import RealEstate, Address
 from Database.POPO.ElectricBillData import ElectricBillData
 from Database.POPO.ElectricData import ElectricData
-from Database.POPO.ServiceProvider import ServiceProvider
+from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
 from Services.Model.ComplexServiceModelBase import ComplexServiceModelBase
 
 
@@ -22,9 +22,9 @@ class PSEG(ComplexServiceModelBase):
         """ Which service providers are valid for this model
 
         Returns:
-            list[ServiceProvider]: [ServiceProvider.PSEG]
+            list[ServiceProviderEnum]: [ServiceProviderEnum.PSEG_UTI]
         """
-        return [ServiceProvider.PSEG]
+        return [ServiceProviderEnum.PSEG_UTI]
 
     def process_service_bill(self, filename):
         """ Open, process and return pseg monthly bill
@@ -39,8 +39,7 @@ class PSEG(ComplexServiceModelBase):
         """
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent / ("PSEGFiles/" + filename), pages="all",
                                   password="11720", guess=False)
-        bill_data = ElectricBillData(None, ServiceProvider.PSEG, None, None, None, 0, 0, None, None,
-                                     None, None, None, True)
+        bill_data = ElectricBillData(None, None, None, None, None, 0, 0, None, None, None, None, None, True)
 
         # get start date and end date from 1st page
         srs = df_list[0]
@@ -141,6 +140,7 @@ class PSEG(ComplexServiceModelBase):
                 bill_data.total_cost = fmt_dec(row_split, -1)
 
         bill_data.real_estate = self.read_real_estate_by_address(address)
+        bill_data.service_provider = self.read_service_provider_by_enum(ServiceProviderEnum.PSEG_UTI)
         self.asb_dict.insert_bills(bill_data)
 
         return bill_data
@@ -157,14 +157,26 @@ class PSEG(ComplexServiceModelBase):
         with MySQLAM() as mam:
             mam.electric_bill_data_insert(bill_list)
 
-    def read_service_bill_from_db_by_repsd(self, real_estate, provider, start_date):
-        """ read pseg monthly bill from electric_bill_data table by start date
+    def update_service_bills_in_db_paid_date_by_id(self, bill_list):
+        """ Update electric bills paid_date in electric_bill_data table by id
+
+        Args:
+            bill_list (list[ElectricBillData]): electric bill data to update
+
+        Raises:
+            MySQLException: if database update issue occurs
+        """
+        with MySQLAM() as mam:
+            mam.electric_bill_data_update(["paid_date"], wheres=[["id", "=", None]], bill_list=bill_list)
+
+    def read_service_bill_from_db_by_repsd(self, real_estate, service_provider, start_date):
+        """ read pseg monthly bill from electric_bill_data table by real estate, service provider, start date
 
         Returned instance(s) of ElectricBillData, if found, are added to self.asb_dict
 
         Args:
             real_estate (RealEstate): real estate location of bill
-            provider (ServiceProvider): service provider of bill
+            service_provider (ServiceProvider): service provider of bill
             start_date (datetime.date): start date of bill
 
         Returns:
@@ -174,7 +186,9 @@ class PSEG(ComplexServiceModelBase):
             MySQLException: if issue with database read
         """
         with MySQLAM() as mam:
-            bill_list = mam.electric_bill_data_read(wheres=[["start_date", "=", start_date]])
+            bill_list = mam.electric_bill_data_read(
+                wheres=[["real_estate_id", "=", real_estate.id], ["service_provider_id", "=", service_provider.id],
+                        ["start_date", "=", start_date]])
 
         self.asb_dict.insert_bills(bill_list)
 
@@ -194,6 +208,24 @@ class PSEG(ComplexServiceModelBase):
                 self.esb_dict.insert_bills(bill)
 
         return df.sort_values(by=["start_date", "is_actual"])
+
+    def read_all_service_bills_from_db_unpaid(self):
+        """ Read all electric bills that have a null paid date and are actual bills
+
+        Electric bills are inserted in self.asb_dict
+
+        Returns:
+            list[ElectricBillData]: empty list if no bill with null paid date
+
+        Raises:
+            MySQLException: if issue with database read
+        """
+        with MySQLAM() as mam:
+            bill_list = mam.electric_bill_data_read(wheres=[["paid_date", "is", None], ["is_actual", "=", True]])
+
+        self.asb_dict.insert_bills(bill_list)
+
+        return bill_list
 
     def insert_monthly_data_to_db(self, electric_data):
         """ Insert monthly electric data to table
@@ -232,15 +264,16 @@ class PSEG(ComplexServiceModelBase):
 
         Args:
             real_estate (RealEstate): notes for this real estate
-            provider (ServiceProvider): notes for this electric provider. ServiceProvider.PSEG used in this function
+            provider (Union[ServiceProvider, ServiceProviderEnum]): notes for this electric provider.
+                Forced to use ServiceProvider with ServiceProviderEnum.PSEG_UTI in this function
 
         Returns:
-            list[dict]: of notes with keys id, real_estate_id, provider, note_type, note
+            list[dict]: of notes with keys id, real_estate_id, service_provider_id, note_type, note, note_order
 
         Raises:
             MySQLException: if issue with database read
         """
-        return super().read_all_estimate_notes_by_reid_provider(real_estate, ServiceProvider.PSEG)
+        return super().read_all_estimate_notes_by_reid_provider(real_estate, ServiceProviderEnum.PSEG_UTI)
 
     def get_utility_data_instance(self, str_dict):
         """ Populate and return ElectricData instance with values in str_dict
@@ -262,7 +295,7 @@ class PSEG(ComplexServiceModelBase):
             address (Address): address of actual bill
             start_date (datetime.date): start date of actual bill
             end_date (datetime.date): end date of actual bill
-            provider (Optional[ServiceProvider]): Forced to ServiceProvider.PSEG in this function
+            provider (Optional[ServiceProviderEnum]): Forced to ServiceProviderEnum.PSEG_UTI in this function
 
         Returns:
             ElectricBillData: with real_estate, provider, start_date and end_date set with same values as in actual bill
@@ -270,17 +303,17 @@ class PSEG(ComplexServiceModelBase):
         Raises:
             ValueError: if self.asb_dict does not contain bill data for specified parameters
         """
-        provider = ServiceProvider.PSEG
+        provider = ServiceProviderEnum.PSEG_UTI
 
         amb = self.asb_dict.get_bills(addresses=address, providers=provider, start_dates=start_date, end_dates=end_date)
         if len(amb) == 0:
-            raise ValueError("self.asb_dict doesn't contain electric bill data for: " + str(address) + ", "
-                             + str(provider) + ", " + str(start_date) + ", " + str(end_date))
+            raise ValueError("self.asb_dict doesn't contain electric bill data for: " + str(address.value) + ", "
+                             + str(provider.value) + ", " + str(start_date) + ", " + str(end_date))
         # there should be only one bill in the list
         amb = amb[0]
 
-        bill_data = ElectricBillData(amb.real_estate, amb.provider, amb.start_date, amb.end_date, None, 0, 0, None,
-                                     amb.bs_rate, amb.bs_cost, None, None, False)
+        bill_data = ElectricBillData(amb.real_estate, amb.service_provider, amb.start_date, amb.end_date, None, 0, 0,
+                                     None, amb.bs_rate, amb.bs_cost, None, None, False)
 
         self.esb_dict.insert_bills(bill_data)
 
@@ -431,7 +464,7 @@ class PSEG(ComplexServiceModelBase):
             address (Address): address of actual bill
             start_date (datetime.date): start date of actual bill
             end_date (datetime.date): end date of actual bill
-            provider (Optional[ServiceProvider]): Forced to ServiceProvider.PSEG in this function
+            provider (Optional[ServiceProviderEnum]): Forced to ServiceProviderEnum.PSEG_UTI in this function
 
         Returns:
             ElectricBillData: estimated monthly bill with all applicable estimate fields set
@@ -440,7 +473,7 @@ class PSEG(ComplexServiceModelBase):
             ValueError: if self.asb_dict or self.esb_dict or self.data_dict do not contain bill data for specified
                 parameters
         """
-        provider = ServiceProvider.PSEG
+        provider = ServiceProviderEnum.PSEG_UTI
 
         amb = self.asb_dict.get_bills(addresses=address, providers=provider, start_dates=start_date, end_dates=end_date)
         ed_start = self.data_dict.get(start_date.strftime("%m%Y"), None)
@@ -448,8 +481,8 @@ class PSEG(ComplexServiceModelBase):
         emb = self.esb_dict.get_bills(addresses=address, providers=provider, start_dates=start_date, end_dates=end_date)
         if len(amb) == 0 or len(emb) == 0 or ed_start is None or ed_end is None:
             raise ValueError("actual monthly bill, start month electric data, end month electric data and estimate " +
-                             "monthly bill for " + str(address) + ", " + str(provider) + ", " + str(start_date) + " - "
-                             + str(end_date) + " must be set before calling this function")
+                             "monthly bill for " + str(address.value) + ", " + str(provider.value) + ", "
+                             + str(start_date) + " - " + str(end_date) + " must be set before calling this function")
 
         # there should be only one actual bill and one estimated bill in each of the bill dicts
         amb = amb[0]

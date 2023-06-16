@@ -2,10 +2,28 @@
 import mysql.connector
 import traceback
 import pandas as pd
+from abc import ABC, abstractmethod
 from typing import Optional, Union
+from enum import Enum
 from Logging.Logger import Logger
 from Database.MySQLException import MySQLException
-from enum import Enum
+from Database.QueryWriter import QueryWriter
+
+
+class DictInsertable(ABC):
+    """ Classes that implement this class can call MySQLBase.dictinsertable_insert() function """
+    @abstractmethod
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def to_insert_dict(self):
+        """ Convert class to dict that can be inserted into a table
+
+        Returns:
+            dict: copy of self.__dict__ with any changes specified by subclass
+        """
+        raise NotImplementedError("to_insert_dict() not implemented by subclass")
 
 
 class FetchCursor(Enum):
@@ -23,7 +41,7 @@ class FetchCursor(Enum):
     LIST_LIST = "list_list"
 
 
-class MySQLBase:
+class MySQLBase(ABC):
     """Base class for MySQL database connections.
 
     This class contains functionality common to all MySQL database interactions. Init creates a database connection and
@@ -260,7 +278,7 @@ class MySQLBase:
             self.db_rollback(err1)
 
     def db_commit(self):
-        """ Convenice function for self._DB.commit() """
+        """ Convenience function for self._DB.commit() """
         self._DB.commit()
 
     def db_rollback(self, err1):
@@ -281,6 +299,27 @@ class MySQLBase:
             self.logger.exception("DB rollback exception")
             raise MySQLException(format(err1) + "\nRollback Failed\n" + format(err2))
 
+    def dictinsertable_insert(self, table, di_list):
+        """ Classes that implement DictInsertable can call this function for insert queries
+
+        Args:
+            table (str): table to insert into
+            di_list (list[DictInsertable]):
+
+        Raises:
+            MySQLException: if any required columns are missing or other database issue occurs
+        """
+        if len(di_list) == 0:
+            return
+
+        di_list = [b.to_insert_dict() for b in di_list]
+
+        qw = QueryWriter(table, fields=list(di_list[0].keys()))
+        query, di_list = qw.write_insert_query(di_list)
+
+        self.execute_commit(query, params_list=di_list, execute_many=True)
+
+
     @property
     def fetch_cursor(self):
         return self._fetch_cursor
@@ -296,57 +335,3 @@ class MySQLBase:
             fetch_cursor (FetchCursor):
         """
         self._fetch_cursor = fetch_cursor
-
-
-class Formula:
-    """ Build a formula to use in a multi table where clause
-
-    This is needed where a table alias has to be appended to each field in the formula.
-    For example, "proceeds_pre_over_allot / market_cap_at_pricing * 100" needs to be changed to
-        "co.proceeds_pre_over_allot / co.market_cap_at_pricing * 100" in MySQLPinzAWS.read_offering()
-    """
-    def __init__(self):
-        self.term_list = []
-        self.alias_index = []
-
-    def fld(self, val, alias=None):
-        """ str field
-        Args:
-            alias (str, optional): table alias. do not include '.' at end of alias. if not provided here, will be
-                prepended in self.to_full_term()
-        """
-        if alias is None:
-            self.term_list.append(val)
-            self.alias_index.append(len(self.term_list) - 1)
-        else:
-            self.term_list.append(alias + "." + val)
-
-        return self
-
-    def op(self, val):
-        """ str op value such as "+", "-", "/", "*" """
-        self.term_list.append(val)
-        return self
-
-    def cnst(self, val):
-        """ val cast to str """
-        self.term_list.append(str(val))
-        return self
-
-    def to_full_term(self, alias):
-        """ Create full term with correct table alias
-
-        Args:
-            alias (str): table alias. do not include '.' at end of alias
-
-        Returns:
-            full term with alias'.' prepended to fields
-        """
-        term_list = []
-
-        for i, t in enumerate(self.term_list):
-            if i in self.alias_index:
-                t = alias + "." + t
-            term_list.append(t)
-
-        return " ".join(term_list)

@@ -16,10 +16,10 @@ class QueryWriter:
         Args:
             table (str): a single table name
             fields (Optional[str, list[str], list[list[str, str]]]): Default None. None, (), [] all assume "*". See
-                self.select_stmt(). None, (), [] and "*" not allowed for update statement.
+                self.select_stmt(). None, (), [], "*", str not allowed for update statement.
             distinct (Optional[boolean]): True to include distinct keyword in query. Default None for False.
-            wheres (Optional[str, list[Union[list[str, str, str], str]]]): See where_stmt().
-                Default None for no where statement
+            wheres (Optional[str, list[Union[list[str, str, str], str]]]): See where_clause().
+                Default None for no where clause. str not allowed for update statement
             order_bys (Optional[str, list[str]]): See order_by_stmt(). Default None for no order by statement
             limit (Optional[int]): Default None for no limit statement
             date_to_int_date (Optional[boolean]): table may use INT type with format YYYYMMDD for dates instead of the
@@ -89,8 +89,8 @@ class QueryWriter:
 
         return "SELECT " + select_str
 
-    def where_stmt(self):
-        """ Compile WHERE statement and parameters
+    def where_clause(self):
+        """ Compile WHERE clause and parameters
 
         self.wheres can have the following formats:
             str: use where_list directly in query. WHERE keyword is prepended to this str. params will return ()
@@ -132,67 +132,73 @@ class QueryWriter:
         if isinstance(self.wheres, str):
             where_str = self.wheres
         elif isinstance(self.wheres, (list, tuple)):
-            for clause in self.wheres:
-                if isinstance(clause, str):
-                    if clause.lower() in ("or", "(", ")"):
-                        where_str += (" " + clause.upper())
+            for cond in self.wheres:
+                if isinstance(cond, str):
+                    if cond.lower() in ("or", "(", ")"):
+                        where_str += (" " + cond.upper())
                     else:
                         where_str += " AND"
-                    keyword_is_next = clause == ")"
-                elif isinstance(clause, (list, tuple)):
+                    keyword_is_next = cond == ")"
+                elif isinstance(cond, (list, tuple)):
                     if keyword_is_next:
                         where_str += " AND"
 
                     # avoid 'in' keyword followed by empty list. e.g. 'field in ()'.
                     # mysql syntax does not allow this. logically this always evaluates to false
-                    if clause[1].lower() == "in" and len(clause[2]) == 0:
+                    if cond[1].lower() == "in" and len(cond[2]) == 0:
                         where_str += " 1=2 "
                     # avoid 'not in' keyword followed by empty list. e.g. 'field not in ()'.
                     # mysql syntax does not allow this. logically this always evaluates to true
-                    elif clause[1].lower() == "not in" and len(clause[2]) == 0:
+                    elif cond[1].lower() == "not in" and len(cond[2]) == 0:
                         where_str += " 1=1 "
-                    elif clause[1].lower() in ("is", "is not"):
-                        if clause[2] is not None:
+                    elif cond[1].lower() in ("is", "is not"):
+                        if cond[2] is not None:
                             raise TypeError("'is' and 'is not' must have val None")
-                        if clause[1].lower() == "is":
-                            where_str += (" " + clause[0] + " is null ")
-                        else:  # clause[1].lower() == "is not"
-                            where_str += (" " + clause[0] + " is not null ")
+                        if cond[1].lower() == "is":
+                            where_str += (" " + cond[0] + " is null ")
+                        else:  # cond[1].lower() == "is not"
+                            where_str += (" " + cond[0] + " is not null ")
                     else:
                         is_col = False
-                        where_str += (" " + clause[0] + " " + clause[1].upper() + " ")
-                        if clause[1].lower() in ("in", "not in"):
-                            where_str += "(" + ",".join(["%s"] * len(clause[2])) + ")"
-                        elif isinstance(clause[2], str) and len(clause[2]) > 2 and clause[2][0] == "^" and \
-                                clause[2][-1] == "^":
+                        where_str += (" " + cond[0] + " " + cond[1].upper() + " ")
+                        if cond[1].lower() in ("in", "not in"):
+                            where_str += "(" + ",".join(["%s"] * len(cond[2])) + ")"
+                        elif isinstance(cond[2], str) and len(cond[2]) > 2 and cond[2][0] == "^" and \
+                                cond[2][-1] == "^":
                             is_col = True
-                            where_str += clause[2][1:-1]
+                            where_str += cond[2][1:-1]
                         else:
                             where_str += "%s"
 
-                        if isinstance(clause[2], (list, tuple)):
-                            clause_temp = []
-                            for el in clause[2]:
-                                if self.date_to_int_date and isinstance(el, datetime.date):
-                                    clause_temp.append(el.strftime("%Y%m%d"))
+                        if isinstance(cond[2], (list, tuple)):
+                            cond_temp = []
+                            for el in cond[2]:
+                                if isinstance(el, bool):
+                                    # True and False must be changed to 1 and 0 since mysql does not have bool type
+                                    cond_temp.append(int(el))
+                                elif self.date_to_int_date and isinstance(el, datetime.date):
+                                    cond_temp.append(el.strftime("%Y%m%d"))
                                 elif isinstance(el, Enum):
-                                    clause_temp.append(el.value)
+                                    cond_temp.append(el.value)
                                 else:
-                                    clause_temp.append(el)
+                                    cond_temp.append(el)
 
-                            clause[2] = tuple(clause_temp) if isinstance(clause[2], tuple) else clause_temp
-                            params += tuple(clause[2])
+                            cond[2] = tuple(cond_temp) if isinstance(cond[2], tuple) else cond_temp
+                            params += tuple(cond[2])
                         elif not is_col:
-                            if self.date_to_int_date and isinstance(clause[2], datetime.date):
-                                clause[2] = clause[2].strftime("%Y%m%d")
-                            elif isinstance(clause[2], Enum):
-                                clause[2] = clause[2].value
+                            if isinstance(cond[2], bool):
+                                # True and False must be changed to 1 and 0 since mysql does not have bool type
+                                cond[2] = int(cond[2])
+                            elif self.date_to_int_date and isinstance(cond[2], datetime.date):
+                                cond[2] = cond[2].strftime("%Y%m%d")
+                            elif isinstance(cond[2], Enum):
+                                cond[2] = cond[2].value
 
-                            params += (str(clause[2]),)
+                            params += (str(cond[2]),)
 
                     keyword_is_next = True
                 else:
-                    raise TypeError(str(type(clause)) + " is not a valid wheres clause type")
+                    raise TypeError(str(type(cond)) + " is not a valid wheres condition type")
         else:
             raise TypeError(str(type(self.wheres)) + " is not a valid wheres type")
 
@@ -241,7 +247,7 @@ class QueryWriter:
         Returns:
             tuple[str, tuple]: (query, params)
         """
-        where_str, params = self.where_stmt()
+        where_str, params = self.where_clause()
         query = self.select_stmt() + " FROM " + self.table + " " + where_str + " " + self.order_by_stmt()
         if int(self.limit) > 0:
             query += " LIMIT " + str(self.limit)
@@ -318,26 +324,33 @@ class QueryWriter:
 
         return query, insert_list
 
-    def write_update_query(self, set_params, where_params=None):
+    def write_update_query(self, set_params, where_params=None, objects=()):
         # TODO allow "in" and "not in" in where clause
-        """ Compile update query with optional where statement and parameter lists
+        """ Compile update query with optional where clause and parameter lists
 
         If self.wheres is a list of lists, the element at position 2 in each sub list is ignored. Put those elements
-        in where_params at the corresponding sub list position.
-        "in" and "not in" not allowed in where statement
+        in where_params at the corresponding sub list position or use objects
+        "in" and "not in" not allowed in where clause
         any Enum values in set_params and where_params will have .value applied.
+        objects can be provided as a convenient way to populate set_params and where_params
 
         Args:
             set_params (list[list]): list of lists of set values. If where_params is not None, must have same number
                 of sub lists as where_params
             where_params (Optional[list[list]]): list of list of where parameters. If not None, must have same number
-                of sub lists as set_params
+                of sub lists as set_params. Default None
+            objects (list[object]): Default (). If length of list is greater than 0:
+                Overwrite set_params using data from each object according to values in self.fields.
+                Also, if where_params is None, compile where_params from each object according to self.wheres.
 
         Returns:
-            tuple[str, list[list]]: (str query, list(list) params). If query == "0", then set_params had length 0
+            tuple[str, list[list]]: (str query, list(list) params). If query == "0", then set_params and objects both
+                had length 0
 
         Raises:
-            ValueError: if self.fields or set_params or where_params are not valid
+            AttributeError: if length of objects > 0 and a field in self.fields or self.wheres conditions is not found
+                as an instance variable in any object in objects
+            ValueError: if self.fields or self.wheres or set_params or where_params are not valid
 
         Example:
             The following will run the same query twice but with different parameter values
@@ -349,11 +362,23 @@ class QueryWriter:
             query = "UPDATE securities SET field1 = %s, field2 = %s WHERE field1 = %s or field3 like %s;
             params = [["val11", val12, where11, "where12"], ["val21", val22, where21, "where22"]]
         """
+        if self.fields in [None, [], ()] or isinstance(self.fields, str):
+            raise ValueError("fields must be a list of str field names in table " + self.table)
+        if isinstance(self.wheres, str):
+            raise ValueError("wheres must use the list format instead of str format")
+
+        if len(objects) > 0:
+            set_params = []
+            for obj in objects:
+                set_params.append([getattr(obj, f) for f in self.fields])
+
+            if where_params is None:
+                where_params = []
+                for obj in objects:
+                    where_params.append([getattr(obj, clause[0]) for clause in self.wheres])
+
         if len(set_params) == 0:
             return "0", ()
-
-        if self.fields in [None, "*", [], ()]:
-            raise ValueError("fields must be a list of field names in table " + self.table)
 
         # noinspection PyTypeChecker
         if where_params is not None and len(set_params) != len(where_params):
@@ -364,7 +389,7 @@ class QueryWriter:
             if f_len != len(lst):
                 raise ValueError("Number of parameters in all set_params sub lists must be " + str(f_len))
 
-        where_str, params = self.where_stmt()
+        where_str, params = self.where_clause()
         if where_str != "":
             where_str = where_str + " "
         if " in " in where_str:
@@ -428,7 +453,7 @@ class QueryWriter:
         """ Compile full delete query as a str and query parameters as a tuple
 
         Args:
-            allow_delete_all (Optional[boolean]): True to allow empty where statement. Default None for False.
+            allow_delete_all (Optional[boolean]): True to allow empty where clause. Default None for False.
 
         Returns:
             tuple[str, tuple]: (str query, tuple params). If where clause is empty and allow_delete_all is false,
@@ -437,7 +462,7 @@ class QueryWriter:
         if allow_delete_all is None:
             allow_delete_all = False
 
-        where_str, params = self.where_stmt()
+        where_str, params = self.where_clause()
         if where_str == "" and not allow_delete_all:
             return "", None
 

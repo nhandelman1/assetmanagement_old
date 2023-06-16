@@ -1,11 +1,13 @@
 import pandas as pd
 from abc import ABC, abstractmethod
 from typing import Optional
+from decimal import Decimal
+from Database.MySQLBase import DictInsertable
 from Database.POPO.RealEstate import RealEstate
 from Database.POPO.ServiceProvider import ServiceProvider
 
 
-class SimpleServiceBillDataBase(ABC):
+class SimpleServiceBillDataBase(DictInsertable, ABC):
     """ Base class for simple data provided on service bill or relevant to service bill
 
     Simple data is for services actually provided and includes location (real estate), provider, start date, end date,
@@ -20,12 +22,12 @@ class SimpleServiceBillDataBase(ABC):
     """
 
     @abstractmethod
-    def __init__(self, real_estate, provider, start_date, end_date, total_cost, paid_date=None, notes=None):
+    def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, paid_date=None, notes=None):
         """ init function
 
         Args:
             real_estate (RealEstate): real estate info
-            provider (ServiceProvider): service provider
+            service_provider (ServiceProvider): service provider
             start_date (datetime.date): bill start date
             end_date (datetime.date): bill end date
             total_cost (Decimal): total bill cost
@@ -35,7 +37,7 @@ class SimpleServiceBillDataBase(ABC):
         """
         self.id = None
         self.real_estate = real_estate
-        self.provider = provider
+        self.service_provider = service_provider
         self.start_date = start_date
         self.end_date = end_date
         self.total_cost = total_cost
@@ -50,14 +52,13 @@ class SimpleServiceBillDataBase(ABC):
         """
         if isinstance(db_dict, dict):
             self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
-            if isinstance(self.provider, str):
-                self.provider = ServiceProvider(self.provider)
 
     def to_insert_dict(self):
         """ Convert class to dict
 
         "id" and "real_estate" fields are not included in returned dict
         "real_estate_id" key is added with value = self.real_estate.id
+        "service_provider_id" key is added with value = self.service_provider.id
 
         Returns:
             dict: copy of self.__dict__ with changes described above
@@ -65,17 +66,21 @@ class SimpleServiceBillDataBase(ABC):
         d = self.__dict__.copy()
         d.pop("id", None)
         d.pop("real_estate", None)
+        d.pop("service_provider", None)
         d["real_estate_id"] = self.real_estate.id
+        d["service_provider_id"] = self.service_provider.id
         return d
 
     def to_pd_df(self):
         """ Convert instance attributes to pandas dataframe
 
         Returns:
-            pd.DataFrame: columns are attributes of this with self.real_estate attributes
+            pd.DataFrame: columns are attributes of this with self.real_estate and self.service_provider attributes
         """
-        df = self.real_estate.to_pd_df().rename(columns={"id": "real_estate_id"})
-        df = pd.concat([df, pd.DataFrame(self.__dict__, index=[0]).drop(columns=["real_estate"])], axis=1)
+        re_df = self.real_estate.to_pd_df().rename(columns={"id": "real_estate_id"})
+        sp_df = self.service_provider.to_pd_df().rename(columns={"id": "service_provider_id"})
+        df = pd.concat([re_df, sp_df,
+                    pd.DataFrame(self.__dict__, index=[0]).drop(columns=["real_estate", "service_provider"])], axis=1)
         return df
 
     @staticmethod

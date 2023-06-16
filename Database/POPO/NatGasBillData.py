@@ -10,10 +10,10 @@ class NatGasBillData(ComplexServiceBillDataBase):
         see super class docstring
         see init docstring for attributes (db_dict is not kept as an attribute)
     """
-    def __init__(self, real_estate, provider, start_date, end_date, total_therms, saved_therms, total_cost, bsc_therms,
-                 bsc_cost, next_therms, next_rate, next_cost, ds_total_cost, gs_rate, gs_cost, ss_total_cost,
-                 oca_total_cost, is_actual, over_therms=None, over_rate=None, over_cost=None, dra_rate=None,
-                 dra_cost=None, sbc_rate=None, sbc_cost=None, tac_rate=None, tac_cost=None, bc_cost=None,
+    def __init__(self, real_estate, service_provider, start_date, end_date, total_therms, saved_therms, total_cost,
+                 bsc_therms, bsc_cost, next_therms, next_rate, next_cost, ds_total_cost, gs_rate, gs_cost,
+                 ss_total_cost, oca_total_cost, is_actual, over_therms=None, over_rate=None, over_cost=None,
+                 dra_rate=None, dra_cost=None, sbc_rate=None, sbc_cost=None, tac_rate=None, tac_cost=None, bc_cost=None,
                  ds_nysls_rate=None, ds_nysls_cost=None, ds_nysst_rate=None, ds_nysst_cost=None, ss_nysls_rate=None,
                  ss_nysls_cost=None, ss_nysst_rate=None, ss_nysst_cost=None, pbc_cost=None, paid_date=None, notes=None,
                  db_dict=None):
@@ -61,8 +61,8 @@ class NatGasBillData(ComplexServiceBillDataBase):
             db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
                 overwrite an argument provided explicitly through the argument variable
         """
-        super().__init__(real_estate, provider, start_date, end_date, total_cost, is_actual, paid_date=paid_date,
-                         notes=notes)
+        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, is_actual,
+                         paid_date=paid_date, notes=notes)
 
         self.total_therms = total_therms
         self.saved_therms = saved_therms

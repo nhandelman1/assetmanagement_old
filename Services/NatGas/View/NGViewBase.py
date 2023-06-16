@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from Database.POPO.RealEstate import Address
 from Services.View.ComplexServiceViewBase import ComplexServiceViewBase
 
 
@@ -10,9 +11,8 @@ class NGViewBase(ComplexServiceViewBase):
         """ init function """
         super().__init__()
 
-    @staticmethod
     @abstractmethod
-    def input_estimation_data(address, start_date, end_date):
+    def input_estimation_data(self, address, start_date, end_date):
         """ Input estimation data that isn't available elsewhere for natural gas bill estimation
 
         Args:

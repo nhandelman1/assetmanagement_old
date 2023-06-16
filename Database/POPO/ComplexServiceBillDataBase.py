@@ -1,3 +1,4 @@
+from typing import Optional
 from abc import abstractmethod
 from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
 
@@ -15,13 +16,27 @@ class ComplexServiceBillDataBase(SimpleServiceBillDataBase):
     """
 
     @abstractmethod
-    def __init__(self, real_estate, provider, start_date, end_date, total_cost, is_actual, paid_date=None, notes=None):
+    def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, is_actual, paid_date=None,
+                 notes=None):
         """ init function
 
         Args:
             see super class init docstring
             is_actual (boolean): is this data from an actual bill (True) or estimated (False)
         """
-        super().__init__(real_estate, provider, start_date, end_date, total_cost, paid_date=paid_date, notes=notes)
+        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, paid_date=paid_date,
+                         notes=notes)
 
         self.is_actual = is_actual
+
+    def db_dict_update(self, db_dict):
+        """ Use db_dict to update instance variables
+
+        Must overwrite this method to set boolean values properly (bool instead of int)
+
+        Args:
+            db_dict (Optional[dict]): dictionary with instance variables as keys. Default None to do no update
+        """
+        if isinstance(db_dict, dict):
+            self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
+            self.is_actual = bool(self.is_actual)

@@ -26,6 +26,22 @@ class Address(Enum):
             return Address.WAGON_LN_10_APT_1 if "apt 1" in str_addr else Address.WAGON_LN_10
         raise ValueError("No Address matches string address: " + str_addr)
 
+    def short_name(self):
+        """ Short name for each address
+
+        Done here to maintain some control over uniqueness of naming
+
+        Returns:
+            str: short name for self Address
+        Raises
+        """
+        if self == Address.WAGON_LN_10:
+            return "WL10"
+        elif self == Address.WAGON_LN_10_APT_1:
+            return "WL10A1"
+        else:
+            raise ValueError("No short name set for Address: " + str(self))
+
 
 class RealEstate:
     """ Real estate data

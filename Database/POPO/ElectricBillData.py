@@ -11,13 +11,13 @@ class ElectricBillData(ComplexServiceBillDataBase):
         see init docstring for attributes (db_dict is not kept as an attribute)
     """
 
-    def __init__(self, real_estate, provider, start_date, end_date, total_kwh, eh_kwh, bank_kwh, total_cost, bs_rate,
-                 bs_cost, dsc_total_cost, toc_total_cost, is_actual, first_kwh=None, first_rate=None, first_cost=None,
-                 next_kwh=None, next_rate=None, next_cost=None, cbc_rate=None, cbc_cost=None, mfc_rate=None,
-                 mfc_cost=None, psc_rate=None, psc_cost=None, psc_total_cost=None, der_rate=None, der_cost=None,
-                 dsa_rate=None, dsa_cost=None, rda_rate=None, rda_cost=None, nysa_rate=None, nysa_cost=None,
-                 rbp_rate=None, rbp_cost=None, spta_rate=None, spta_cost=None, st_rate=None, st_cost=None,
-                 paid_date=None, notes=None, db_dict=None):
+    def __init__(self, real_estate, service_provider, start_date, end_date, total_kwh, eh_kwh, bank_kwh, total_cost,
+                 bs_rate, bs_cost, dsc_total_cost, toc_total_cost, is_actual, first_kwh=None, first_rate=None,
+                 first_cost=None,  next_kwh=None, next_rate=None, next_cost=None, cbc_rate=None, cbc_cost=None,
+                 mfc_rate=None, mfc_cost=None, psc_rate=None, psc_cost=None, psc_total_cost=None, der_rate=None,
+                 der_cost=None, dsa_rate=None, dsa_cost=None, rda_rate=None, rda_cost=None, nysa_rate=None,
+                 nysa_cost=None, rbp_rate=None, rbp_cost=None, spta_rate=None, spta_cost=None, st_rate=None,
+                 st_cost=None, paid_date=None, notes=None, db_dict=None):
         """ init function
 
         Args:
@@ -59,8 +59,8 @@ class ElectricBillData(ComplexServiceBillDataBase):
             db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
                 overwrite an argument provided explicitly through the argument variable
         """
-        super().__init__(real_estate, provider, start_date, end_date, total_cost, is_actual, paid_date=paid_date,
-                         notes=notes)
+        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, is_actual,
+                         paid_date=paid_date, notes=notes)
 
         self.total_kwh = total_kwh
         self.eh_kwh = eh_kwh

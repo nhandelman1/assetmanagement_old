@@ -1,10 +1,10 @@
 import datetime
 from abc import abstractmethod
-from typing import Optional
+from typing import Optional, Union
 from Database.MySQLAM import MySQLAM
 from Database.POPO.RealEstate import RealEstate, Address
 from Database.POPO.UtilityDataBase import UtilityDataBase
-from Database.POPO.ServiceProvider import ServiceProvider
+from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
 from Database.POPO.ComplexServiceBillDataBase import ComplexServiceBillDataBase
 from Services.Model.SimpleServiceModelBase import SimpleServiceModelBase, BillDict
 
@@ -27,14 +27,11 @@ class ComplexServiceModelBase(SimpleServiceModelBase):
         self.data_dict = {}
         self.esb_dict = BillDict()
 
-    @abstractmethod
-    def valid_providers(self):
-        """ Which service providers are valid for this model
-
-        Returns:
-            list[ServiceProvider]: list of ServiceProvider
-        """
-        raise NotImplementedError("valid_providers() not implemented by subclass")
+    def clear_model(self):
+        """ Call clear() on attribute dict(s) """
+        super().clear_model()
+        self.data_dict.clear()
+        self.esb_dict.clear()
 
     @abstractmethod
     def process_service_bill(self, filename):
@@ -58,7 +55,7 @@ class ComplexServiceModelBase(SimpleServiceModelBase):
     def read_all_service_bills_from_db(self):
         """ Read all service bills
 
-        Service bills are inserted in self.asb_dict
+        Service bills are inserted in self.asb_dict or self.esb_dict
 
         Returns:
             pd.DataFrame: with all service bill data ordered by most recent to oldest start date
@@ -119,7 +116,7 @@ class ComplexServiceModelBase(SimpleServiceModelBase):
             address (Address): address of actual bill
             start_date (datetime.date): start date of actual bill
             end_date (datetime.date): end date of actual bill
-            provider (Optional[ServiceProvider]): service provider of actual bill. Default None needs to be set to a
+            provider (Optional[ServiceProviderEnum]): service provider of actual bill. Default None needs to be set to a
                 certain provider by each subclass
 
         Returns:
@@ -141,7 +138,7 @@ class ComplexServiceModelBase(SimpleServiceModelBase):
             address (Address): address of actual bill
             start_date (datetime.date): start date of actual bill
             end_date (datetime.date): end date of actual bill
-            provider (Optional[ServiceProvider]): service provider of actual bill. Default None needs to be set to a
+            provider (Optional[ServiceProviderEnum]): service provider of actual bill. Default None needs to be set to a
                 certain provider by each subclass
 
         Returns:
@@ -149,21 +146,42 @@ class ComplexServiceModelBase(SimpleServiceModelBase):
         """
         raise NotImplementedError("do_estimate_monthly_bill() not implemented by subclass")
 
+    def read_all_service_bills_from_db_unpaid(self):
+        """ Read all complex bills that have a null paid date and are actual bills
+
+        Superclass only requires bills to have a null paid date. This class also requires bills to be actual
+        Complex service bills are inserted in self.asb_dict
+
+        Returns:
+            list[ComplexServiceBillDataBase]: empty list if no bill with null paid date
+
+        Raises:
+            MySQLException: if issue with database read
+        """
+        raise NotImplementedError("read_all_service_bills_from_db_unpaid() not implemented by subclass")
+
     def read_all_estimate_notes_by_reid_provider(self, real_estate, provider):
         """ read estimate notes from estimate_notes table by real estate and provider and order by note_order
 
         Args:
             real_estate (RealEstate): get notes for this real estate
-            provider (ServiceProvider): get notes for this service provider
+            provider (Union[ServiceProvider, ServiceProviderEnum]): get notes for this service provider
 
         Returns:
-            list[dict]: of notes with keys id, real_estate_id, provider, note_type, note
+            list[dict]: of notes with keys id, real_estate_id, service_provider_id, note_type, note, note_order
 
         Raises:
+            ValueError: if provider is ServiceProviderEnum but no ServiceProvider is found
             MySQLException: if issue with database read
         """
         with MySQLAM() as mam:
+            if isinstance(provider, ServiceProviderEnum):
+                service_provider = mam.service_provider_read(wheres=[["provider", "=", provider]])
+                if len(service_provider) == 0:
+                    raise ValueError("No Service Provider found for Service Provider Enum: " + str(provider.value))
+                provider = service_provider[0]
             notes_list = mam.estimate_notes_read(
-                wheres=[["real_estate_id", "=", real_estate.id], ["provider", "=", provider]], order_bys=["note_order"])
+                wheres=[["real_estate_id", "=", real_estate.id], ["service_provider_id", "=", provider.id]],
+                order_bys=["note_order"])
 
         return notes_list

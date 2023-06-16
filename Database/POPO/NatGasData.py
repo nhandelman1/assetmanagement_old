@@ -2,8 +2,6 @@ import datetime
 from typing import Optional
 from decimal import Decimal
 from Database.POPO.UtilityDataBase import UtilityDataBase
-from Database.POPO.RealEstate import RealEstate
-from Database.POPO.ServiceProvider import ServiceProvider
 
 
 class NatGasData(UtilityDataBase):
@@ -13,10 +11,10 @@ class NatGasData(UtilityDataBase):
         see super class docstring
         see init docstring for attributes (db_dict is not kept as an attribute)
     """
-    def __init__(self, real_estate, provider, month_date, month_year, bsc_therms, bsc_rate, next_therms, next_rate,
-                 over_rate, gs_rate, dra_rate=None, wna_low_rate=None, wna_high_rate=None, sbc_rate=None, tac_rate=None, bc_rate=None,
-                 ds_nysls_rate=None, ds_nysst_rate=None, ss_nysls_rate=None, ss_nysst_rate=None, pbc_rate=None,
-                 db_dict=None, str_dict=None):
+    def __init__(self, real_estate, service_provider, month_date, month_year, bsc_therms, bsc_rate, next_therms,
+                 next_rate, over_rate, gs_rate, dra_rate=None, wna_low_rate=None, wna_high_rate=None, sbc_rate=None,
+                 tac_rate=None, bc_rate=None, ds_nysls_rate=None, ds_nysst_rate=None, ss_nysls_rate=None,
+                 ss_nysst_rate=None, pbc_rate=None, db_dict=None, str_dict=None):
         """ init function
 
         Args:
@@ -44,7 +42,7 @@ class NatGasData(UtilityDataBase):
                 if an argument is in the dictionary, it will overwrite an argument provided explicitly through the
                 argument variable or through db_dict. month_date str format must be YYYY-MM-DD
         """
-        super().__init__(real_estate, provider, month_date, month_year)
+        super().__init__(real_estate, service_provider, month_date, month_year)
 
         self.bsc_therms = bsc_therms
         self.bsc_rate = bsc_rate
@@ -71,7 +69,7 @@ class NatGasData(UtilityDataBase):
         """ Update instance variables using string (or otherwise specified below) values in str_dict
 
         "real_estate" key must have value RealEstate instance
-        "provider" key can have value string or ServiceProvider instance
+        "provider" key must have value ServiceProvider instance
 
         Args:
             see superclass docstring
@@ -81,11 +79,8 @@ class NatGasData(UtilityDataBase):
                 return None if val is None else Decimal(val)
 
             self.__dict__.update(pair for pair in str_dict.items() if pair[0] in self.__dict__.keys())
-            self.real_estate = self.real_estate
-            self.provider = ServiceProvider(self.provider)
             if isinstance(self.month_date, str):
                 self.month_date = datetime.datetime.strptime(self.month_date, "%Y-%m-%d").date()
-            self.month_year = self.month_year
             self.bsc_therms = Decimal(self.bsc_therms)
             self.bsc_rate = Decimal(self.bsc_rate)
             self.next_therms = Decimal(self.next_therms)

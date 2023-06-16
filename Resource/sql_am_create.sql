@@ -394,6 +394,12 @@ create table real_estate (
     zip_code char(5) not null
 );
 
+create table service_provider (
+	id smallint not null auto_increment primary key,
+    provider varchar(100) not null unique,
+	tax_category enum('CleaningMaintenance', 'Depreciation', 'Income', 'Insurance', 'MortgageInterest', 'None', 'Repairs', 'Supplies', 'Taxes', 'Utilities') not null
+);
+
 create table real_property_values (
 	id smallint not null auto_increment primary key,
     real_estate_id smallint not null,
@@ -411,10 +417,31 @@ create table mysunpower_hourly_data (
     home_kwh decimal(5,2)
 );
 
+create table solar_bill_data (
+	id int not null auto_increment primary key,
+    real_estate_id smallint not null,
+    service_provider_id smallint not null,
+	start_date date not null,
+    end_date date not null,
+    solar_kwh smallint unsigned not null,
+    home_kwh smallint unsigned not null,
+    total_cost decimal(8,2) not null,
+    actual_costs decimal(8,2) not null,
+    oc_bom_basis decimal(8,2) not null,
+    oc_pnl_pct decimal(4,2) not null,
+    oc_pnl decimal(8,2) not null,
+    oc_eom_basis decimal(8,2) not null,
+    paid_date date,
+    notes text,
+    unique key unique_reid_spid_startdate (real_estate_id, service_provider_id, start_date),
+    foreign key (real_estate_id) references real_estate (id),
+    foreign key (service_provider_id) references service_provider (id)
+);
+
 create table electric_bill_data (
 	id smallint not null auto_increment primary key, 
     real_estate_id smallint not null,
-	provider enum('PSEG') not null,
+    service_provider_id smallint not null,
     start_date date not null,
     end_date date not null,
     total_kwh smallint unsigned not null,
@@ -454,15 +481,17 @@ create table electric_bill_data (
     toc_total_cost decimal(5,2) not null,
     is_actual boolean not null,
     paid_date date,
+    notes text,
     unique key unique_reid_start_date_actual (real_estate_id, start_date, is_actual),
     unique key unique_reid_end_date_actual (real_estate_id, end_date, is_actual),
-    foreign key (real_estate_id) references real_estate (id)
+    foreign key (real_estate_id) references real_estate (id),
+    foreign key (service_provider_id) references service_provider (id)
 );
 
 create table electric_data (
 	id smallint not null auto_increment primary key,
     real_estate_id smallint not null,
-	provider enum('PSEG') not null,
+	service_provider_id smallint not null,
     month_date date not null,
     month_year char(6) not null,
     first_kwh smallint unsigned not null,
@@ -477,24 +506,26 @@ create table electric_data (
     rbp_rate decimal(7,6),
     spta_rate decimal(7,6),
     unique key unique_reid_month_year (real_estate_id, month_year),
-    foreign key (real_estate_id) references real_estate (id)
+    foreign key (real_estate_id) references real_estate (id),
+    foreign key (service_provider_id) references service_provider (id)
 );
 
 create table estimate_notes (
 	id smallint not null auto_increment primary key,
     real_estate_id smallint not null,
-	provider enum('PSEG', 'NationalGrid') not null,
+    service_provider_id smallint not null,
     note_type varchar(20) not null,
     note text not null,
     note_order smallint not null,
-    unique key unique_reid_provider_note_type (real_estate_id, provider, note_type),
-    foreign key (real_estate_id) references real_estate (id)
+    unique key unique_reid_spid_notetype (real_estate_id, service_provider_id, note_type),
+    foreign key (real_estate_id) references real_estate (id),
+    foreign key (service_provider_id) references service_provider(id)
 );
 
 create table natgas_bill_data (
 	id smallint not null auto_increment primary key, 
     real_estate_id smallint not null,
-	provider enum('NationalGrid') not null,
+    service_provider_id smallint not null,
     start_date date not null,
     end_date date not null,
     total_therms smallint unsigned not null,
@@ -531,15 +562,17 @@ create table natgas_bill_data (
     oca_total_cost decimal(5,2) not null,
     is_actual boolean not null,
     paid_date date,
+    notes text,
     unique key unique_reid_start_date_actual (real_estate_id, start_date, is_actual),
     unique key unique_reid_end_date_actual (real_estate_id, end_date, is_actual),
-    foreign key (real_estate_id) references real_estate (id)
+    foreign key (real_estate_id) references real_estate (id),
+    foreign key (service_provider_id) references service_provider(id)
 );
 
 create table natgas_data (
 	id smallint not null auto_increment primary key,
     real_estate_id smallint not null,
-	provider enum('NationalGrid') not null,
+    service_provider_id smallint not null,
     month_date date not null,
     month_year char(6) not null,
     bsc_therms decimal(3,1) not null,
@@ -560,17 +593,42 @@ create table natgas_data (
     ss_nysst_rate decimal(5,4),
     pbc_rate decimal(4,2),
     unique key unique_reid_month_year (real_estate_id, month_year),
-    foreign key (real_estate_id) references real_estate (id)
+    foreign key (real_estate_id) references real_estate (id),
+    foreign key (service_provider_id) references service_provider(id)
 );
 
 create table simple_bill_data (
 	id int not null auto_increment primary key,
     real_estate_id smallint not null,
-	provider enum('SCWA') not null,
+    service_provider_id smallint not null,
 	start_date date not null,
     end_date date not null,
     total_cost decimal(6,2) not null,
     paid_date date,
-    foreign key (real_estate_id) references real_estate (id)
+    notes text,
+    # not likely that this constraint will be violated for a legitimate reason
+    unique key unique_reid_spid_startdate_totalcost (real_estate_id, service_provider_id, start_date, total_cost),
+    foreign key (real_estate_id) references real_estate (id),
+    foreign key (service_provider_id) references service_provider(id)
+);
+
+create table mortgage_bill_data (
+	id int not null auto_increment primary key,
+    real_estate_id smallint not null,
+    service_provider_id smallint not null,
+	start_date date not null,
+    end_date date not null,
+    total_cost decimal(8,2) not null,
+    outs_prin decimal (10, 2) not null,
+    esc_bal decimal (8,2) not null,
+    prin_pmt decimal (7,2) not null,
+    int_pmt decimal (7,2) not null,
+    esc_pmt decimal (7,2) not null,
+    other_pmt decimal (7,2) not null,
+    paid_date date,
+    notes text,
+    unique key unique_reid_spid_startdate (real_estate_id, service_provider_id, start_date),
+    foreign key (real_estate_id) references real_estate (id),
+    foreign key (service_provider_id) references service_provider(id)
 );
 

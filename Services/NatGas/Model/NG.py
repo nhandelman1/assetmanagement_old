@@ -8,7 +8,7 @@ from Database.MySQLAM import MySQLAM
 from Database.POPO.RealEstate import RealEstate, Address
 from Database.POPO.NatGasBillData import NatGasBillData
 from Database.POPO.NatGasData import NatGasData
-from Database.POPO.ServiceProvider import ServiceProvider
+from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
 from Services.Model.ComplexServiceModelBase import ComplexServiceModelBase
 
 
@@ -22,9 +22,9 @@ class NG(ComplexServiceModelBase):
         """ Which service providers are valid for this model
 
         Returns:
-            list[ServiceProvider]: [ServiceProvider.NG]
+            list[ServiceProviderEnum]: [ServiceProviderEnum.NG_UTI]
         """
-        return [ServiceProvider.NG]
+        return [ServiceProviderEnum.NG_UTI]
 
     def process_service_bill(self, filename):
         """ Open, process and return national grid monthly bill
@@ -39,7 +39,7 @@ class NG(ComplexServiceModelBase):
         """
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent / ("NGFiles/" + filename), pages="all",
                                   password="11720", guess=False)
-        bill_data = NatGasBillData(None, ServiceProvider.NG, None, None, None, 0, None, None, None, None,
+        bill_data = NatGasBillData(None, None, None, None, None, 0, None, None, None, None,
                                    None, None, None, None, None, None, None, True)
 
         df = df_list[3]
@@ -131,6 +131,7 @@ class NG(ComplexServiceModelBase):
                     total_therms_found = False
 
         bill_data.real_estate = self.read_real_estate_by_address(Address.to_address(df.at[2, 1] + df.at[3, 1]))
+        bill_data.service_provider = self.read_service_provider_by_enum(ServiceProviderEnum.NG_UTI)
         self.asb_dict.insert_bills(bill_data)
 
         return bill_data
@@ -147,14 +148,26 @@ class NG(ComplexServiceModelBase):
         with MySQLAM() as mam:
             mam.natgas_bill_data_insert(bill_list)
 
-    def read_service_bill_from_db_by_repsd(self, real_estate, provider, start_date):
-        """ read national grid monthly bill from natgas_bill_data table by real estate, provider, start date
+    def update_service_bills_in_db_paid_date_by_id(self, bill_list):
+        """ Update natural gas bills paid_date in natgas_bill_data table by id
+
+        Args:
+            bill_list (list[NatGasBillData]): natural gas bill data to update
+
+        Raises:
+            MySQLException: if database update issue occurs
+        """
+        with MySQLAM() as mam:
+            mam.natgas_bill_data_update(["paid_date"], wheres=[["id", "=", None]], bill_list=bill_list)
+
+    def read_service_bill_from_db_by_repsd(self, real_estate, service_provider, start_date):
+        """ read national grid monthly bill from natgas_bill_data table by real estate, service provider, start date
 
         Returned instance(s) of NatGasBillData, if found, are added to self.asb_dict
 
         Args:
             real_estate (RealEstate): real estate location of bill
-            provider (ServiceProvider): service provider of bill
+            service_provider (ServiceProvider): service provider of bill
             start_date (datetime.date): start date of bill
 
         Returns:
@@ -164,7 +177,9 @@ class NG(ComplexServiceModelBase):
             MySQLException: if issue with database read
         """
         with MySQLAM() as mam:
-            bill_list = mam.natgas_bill_data_read(wheres=[["start_date", "=", start_date]])
+            bill_list = mam.natgas_bill_data_read(
+                wheres=[["real_estate_id", "=", real_estate.id], ["service_provider_id", "=", service_provider.id],
+                        ["start_date", "=", start_date]])
 
         self.asb_dict.insert_bills(bill_list)
 
@@ -184,6 +199,24 @@ class NG(ComplexServiceModelBase):
                 self.esb_dict.insert_bills(bill)
 
         return df.sort_values(by=["start_date", "is_actual"])
+
+    def read_all_service_bills_from_db_unpaid(self):
+        """ Read all natural gas bills that have a null paid date and are actual bills
+
+        Natural gas bills are inserted in self.asb_dict
+
+        Returns:
+            list[NatGasBillData]: empty list if no bill with null paid date
+
+        Raises:
+            MySQLException: if issue with database read
+        """
+        with MySQLAM() as mam:
+            bill_list = mam.natgas_bill_data_read(wheres=[["paid_date", "is", None], ["is_actual", "=", True]])
+
+        self.asb_dict.insert_bills(bill_list)
+
+        return bill_list
 
     def insert_monthly_data_to_db(self, natgas_data):
         """ Insert monthly natural gas data to table
@@ -222,15 +255,16 @@ class NG(ComplexServiceModelBase):
 
         Args:
             real_estate (RealEstate): notes for this real estate
-            provider (ServiceProvider): notes for this natural gas provider. ServiceProvider.NG used in this function
+            provider (Union[ServiceProvider, ServiceProviderEnum]): notes for this natural gas provider.
+                Forced to use ServiceProvider with ServiceProviderEnum.NG_UTI in this function
 
         Returns:
-            list[dict]: of notes with keys id, real_estate_id, provider, note_type, note
+            list[dict]: of notes with keys id, real_estate_id, service_provider_id, note_type, note, note_order
 
         Raises:
             MySQLException: if issue with database read
         """
-        return super().read_all_estimate_notes_by_reid_provider(real_estate, ServiceProvider.NG)
+        return super().read_all_estimate_notes_by_reid_provider(real_estate, ServiceProviderEnum.NG_UTI)
 
     def get_utility_data_instance(self, str_dict):
         """ Populate and return NatGasData instance with values in str_dict
@@ -252,30 +286,31 @@ class NG(ComplexServiceModelBase):
             address (Address): address of actual bill
             start_date (datetime.date): start date of actual bill
             end_date (datetime.date): end date of actual bill
-            provider (Optional[ServiceProvider]): Forced to ServiceProvider.NG in this function
+            provider (Optional[ServiceProviderEnum]): Forced to ServiceProviderEnum.NG_UTI in this function
 
         Returns:
-            NatGasBillData: with real_estate, provider, start_date, end_date, total_therms, bsc_therms, bsc_cost,
-            gs_rate, dra_rate, sbc_rate, tac_rate, bc_cost, ds_nysst_rate, ss_nysst_rate, pbc_cost set with same values
-            as in actual bill
+            NatGasBillData: with real_estate, service_provider, start_date, end_date, total_therms, bsc_therms,
+            bsc_cost, gs_rate, dra_rate, sbc_rate, tac_rate, bc_cost, ds_nysst_rate, ss_nysst_rate, pbc_cost set with
+            same values as in actual bill
 
         Raises:
             ValueError: if self.asb_dict does not contain bill data for specified parameters
         """
-        provider = ServiceProvider.NG
+        provider = ServiceProviderEnum.NG_UTI
 
         amb = self.asb_dict.get_bills(addresses=address, providers=provider, start_dates=start_date, end_dates=end_date)
         if len(amb) == 0:
-            raise ValueError("self.asb_dict doesn't contain natural gas bill data for: " + str(address) + ", "
-                             + str(provider) + ", " + str(start_date) + ", " + str(end_date))
+            raise ValueError("self.asb_dict doesn't contain natural gas bill data for: " + str(address.value) + ", "
+                             + str(provider.value) + ", " + str(start_date) + ", " + str(end_date))
         # there should be only one bill in the list
         amb = amb[0]
 
-        bill_data = NatGasBillData(amb.real_estate, amb.provider, amb.start_date, amb.end_date, amb.total_therms, None,
-                                   None, amb.bsc_therms, amb.bsc_cost, None, amb.next_rate, None, None, amb.gs_rate,
-                                   None, None, None, False, dra_rate=amb.dra_rate, sbc_rate=amb.sbc_rate,
-                                   tac_rate=amb.tac_rate, bc_cost=amb.bc_cost, ds_nysst_rate=amb.ds_nysst_rate,
-                                   ss_nysst_rate=amb.ss_nysst_rate, pbc_cost=amb.pbc_cost)
+        bill_data = NatGasBillData(amb.real_estate, amb.service_provider, amb.start_date, amb.end_date,
+                                   amb.total_therms, None, None, amb.bsc_therms, amb.bsc_cost, None, amb.next_rate,
+                                   None, None, amb.gs_rate, None, None, None, False, dra_rate=amb.dra_rate,
+                                   sbc_rate=amb.sbc_rate, tac_rate=amb.tac_rate, bc_cost=amb.bc_cost,
+                                   ds_nysst_rate=amb.ds_nysst_rate, ss_nysst_rate=amb.ss_nysst_rate,
+                                   pbc_cost=amb.pbc_cost)
 
         self.esb_dict.insert_bills(bill_data)
 
@@ -406,7 +441,7 @@ class NG(ComplexServiceModelBase):
             address (Address): address of actual bill
             start_date (datetime.date): start date of actual bill
             end_date (datetime.date): end date of actual bill
-            provider (Optional[ServiceProvider]): Forced to ServiceProvider.NG in this function
+            provider (Optional[ServiceProviderEnum]): Forced to ServiceProviderEnum.NG_UTI in this function
 
         Returns:
             NatGasBillData: emb with all applicable estimate fields set
@@ -415,7 +450,7 @@ class NG(ComplexServiceModelBase):
             ValueError: if self.asb_dict or self.esb_dict or self.data_dict do not contain bill data for specified
                 parameters
         """
-        provider = ServiceProvider.NG
+        provider = ServiceProviderEnum.NG_UTI
 
         amb = self.asb_dict.get_bills(addresses=address, providers=provider, start_dates=start_date, end_dates=end_date)
         ngd_start = self.data_dict.get(start_date.strftime("%m%Y"), None)
@@ -424,7 +459,7 @@ class NG(ComplexServiceModelBase):
 
         if len(amb) == 0 or len(emb) == 0 or ngd_start is None or ngd_end is None:
             raise ValueError("actual monthly bill, start month natural gas data, end month natural gas data and " +
-                             "estimate monthly bill for " + str(address) + ", " + str(provider) + ", "
+                             "estimate monthly bill for " + str(address.value) + ", " + str(provider.value) + ", "
                              + str(start_date) + " - " + str(end_date) + " must be set before calling this function")
 
         # there should be only one actual bill and one estimated bill in each of the bill dicts

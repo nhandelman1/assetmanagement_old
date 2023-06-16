@@ -1,7 +1,8 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
 
 
-class SolarViewBase(ABC):
+class SolarViewBase(SimpleServiceViewBase):
     """ Abstract base view class for Solar data display and input """
 
     @abstractmethod
@@ -9,9 +10,14 @@ class SolarViewBase(ABC):
         """ init function """
         pass
 
-    @staticmethod
+    def display_bill_preprocess_warning(self):
+        """ Display message that solar bill dates should match the electric bill dates with the associated property
+        Dates are start date and end date
+        """
+        raise NotImplementedError("display_preprocess_warning() not implemented by subclass")
+
     @abstractmethod
-    def input_read_new_or_skip(start_date, end_date):
+    def input_read_new_hourly_data_file_or_skip(self, start_date, end_date):
         """ ask to read new hourly data file or skip this step
 
         Args:
@@ -23,9 +29,8 @@ class SolarViewBase(ABC):
         """
         raise NotImplementedError("input_read_new_or_skip() not implemented by subclass")
 
-    @staticmethod
     @abstractmethod
-    def input_read_new_hourly_data_file(start_date, end_date):
+    def input_read_new_hourly_data_file(self, start_date, end_date):
         """ ask for new file name
 
         Args:

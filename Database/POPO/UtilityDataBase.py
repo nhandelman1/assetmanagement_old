@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
+from typing import Union
+from Database.MySQLBase import DictInsertable
 from Database.POPO.RealEstate import RealEstate
 from Database.POPO.ServiceProvider import ServiceProvider
 
 
-class UtilityDataBase(ABC):
+class UtilityDataBase(DictInsertable, ABC):
     """ Base class for monthly data not necessarily provided on monthly utility bill and can be found elsewhere
 
     Attributes:
@@ -12,18 +14,18 @@ class UtilityDataBase(ABC):
     """
 
     @abstractmethod
-    def __init__(self, real_estate, provider, month_date, month_year):
+    def __init__(self, real_estate, service_provider, month_date, month_year):
         """ init function
 
         Args:
             real_estate (RealEstate): real estate data
-            provider (ServiceProvider): electricity provider
+            service_provider (ServiceProvider):
             month_date (datetime.date): date representation for the month of this data
             month_year (str): "MMYYYY" representation for the month of this data
         """
         self.id = None
         self.real_estate = real_estate
-        self.provider = provider
+        self.service_provider = service_provider
         self.month_date = month_date
         self.month_year = month_year
 
@@ -34,29 +36,28 @@ class UtilityDataBase(ABC):
         Subclasses must implement this since the data type for each instance variable is dependent on the subclass
 
         Args:
-            str_dict (dict): dictionary with instance variables (string keys) and string (or subclass specific) values
+            str_dict (Union[dict, None]): dictionary with instance variables (string keys) and string
+                (or subclass specific) values. None is allowed for convenience
         """
         raise NotImplementedError("str_dict_update() not implemented by subclass")
 
     def db_dict_update(self, db_dict):
         """ Update instance variables using db_dict
 
-        provider value can be strings in db_dict
-
         Args:
-            db_dict (dict): dictionary with instance variables (string keys) and values (datatype values)
+            db_dict (Union[dict, None]): dictionary with instance variables (string keys) and values (datatype values).
+                None is allowed for convenience
         """
         # use db_dict to update instance variables
         if isinstance(db_dict, dict):
             self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
-            if isinstance(self.provider, str):
-                self.provider = ServiceProvider(self.provider)
 
     def to_insert_dict(self):
         """ Convert class to dict
 
         "id" and "real_estate" fields are not included in returned dict
         "real_estate_id" key is added with value = self.real_estate.id
+        "service_provider_id" key is added with value = self.service_provider.id
 
         Returns:
             dict: copy of self.__dict__ with changes described above
@@ -64,6 +65,8 @@ class UtilityDataBase(ABC):
         d = self.__dict__.copy()
         d.pop("id", None)
         d.pop("real_estate", None)
+        d.pop("service_provider", None)
         d["real_estate_id"] = self.real_estate.id
+        d["service_provider_id"] = self.service_provider.id
         return d
 

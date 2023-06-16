@@ -5,13 +5,13 @@ from typing import Optional, Union
 from Database.MySQLAM import MySQLAM
 from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
 from Database.POPO.RealEstate import Address, RealEstate
-from Database.POPO.ServiceProvider import ServiceProvider
+from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
 
 
 class BillDict(dict):
     """ Nested dict for holding Database.POPO.SimpleServiceBillDataBase.SimpleServiceBillDataBase instances
 
-    Structure is: self[Database.POPO.RealEstate.Address][Database.POPO.ServiceProvider.ServiceProvider]
+    Structure is: self[Database.POPO.RealEstate.Address][Database.POPO.ServiceProvider.ServiceProviderEnum]
         [Start Date (datetime.date)][End Date (datetime.date)] = list[SimpleServiceBillDataBase]
     """
     def __init__(self):
@@ -22,13 +22,13 @@ class BillDict(dict):
 
         Args:
             bills (Union[SimpleServiceBillDataBase, list[SimpleServiceBillDataBase], None]): subclass instance(s).
-                bills are added to self nested dict by bill.real_estate.address, bill.provider, bill.start_date,
-                bill.end_date. This function will not insert bills if it is None
+                bills are added to self nested dict by bill.real_estate.address, bill.service_provider.provider,
+                bill.start_date, bill.end_date. This function will not insert bills if it is None
         """
         bills = [] if bills is None else [bills] if isinstance(bills, SimpleServiceBillDataBase) else bills
 
         for bill in bills:
-            self.setdefault(bill.real_estate.address, {}).setdefault(bill.provider, {})\
+            self.setdefault(bill.real_estate.address, {}).setdefault(bill.service_provider.provider, {})\
                 .setdefault(bill.start_date, {}).setdefault(bill.end_date, []).append(bill)
 
     def get_bills(self, addresses=None, providers=None, start_dates=None, end_dates=None):
@@ -36,8 +36,8 @@ class BillDict(dict):
 
         Args:
             addresses (Union[Address, list[Address], None]): address(es) of bill(s). Default None for all addresses
-            providers (Union[ServiceProvider, list[ServiceProvider], None]): service provider(s) of bill(s).
-                Default None for all service providers
+            providers (Union[ServiceProviderEnum, list[ServiceProviderEnum], None]):
+                service provider(s) of bill(s). Default None for all service providers
             start_dates (Union[datetime.date, list[datetime.date], None]): start date(s) of bill(s).
                 Default None for all start dates
             end_dates (Union[datetime.date, list[datetime.date], None]): end date(s) of bill(s).
@@ -66,7 +66,7 @@ class SimpleServiceModelBase(ABC):
     """ Base model for simple service model classes
 
     Simple service models are associated with subclasses of SimpleServiceBillDataBase. Simple services are those where
-    minimal data is required to be stored. Subclasses can override process_simple_service_bill(filename) function , or
+    minimal data is required to be stored. Subclasses can override process_simple_service_bill(filename) function, or
     use the function as implemented in this class.
 
     Attributes:
@@ -76,6 +76,19 @@ class SimpleServiceModelBase(ABC):
     def __init__(self):
         """ init function """
         self.asb_dict = BillDict()
+
+    @abstractmethod
+    def valid_providers(self):
+        """ Which service providers are valid for this model
+
+        Returns:
+            list[ServiceProviderEnum]: list of ServiceProviderEnum
+        """
+        raise NotImplementedError("valid_providers() not implemented by subclass")
+
+    def clear_model(self):
+        """ Call clear() on attribute dict(s) """
+        self.asb_dict.clear()
 
     @abstractmethod
     def process_service_bill(self, filename):
@@ -108,14 +121,26 @@ class SimpleServiceModelBase(ABC):
         raise NotImplementedError("insert_service_bill_to_db() not implemented by subclass")
 
     @abstractmethod
-    def read_service_bill_from_db_by_repsd(self, real_estate, provider, start_date):
-        """ Read service bills from table by real estate, provider, start date
+    def update_service_bills_in_db_paid_date_by_id(self, bill_list):
+        """ Update service bills paid_date in table by id
+
+        Args:
+            bill_list (list[SimpleServiceBillDataBase]): list of subclass instances to update
+
+        Raises:
+            MySQLException: if database update issue occurs
+        """
+        raise NotImplementedError("update_service_bills_in_db_paid_date_by_id() not implemented by subclass")
+
+    @abstractmethod
+    def read_service_bill_from_db_by_repsd(self, real_estate, service_provider, start_date):
+        """ Read service bills from table by real estate, service provider, start date
 
         Returned instance(s) of SimpleServiceBillDataBase subclass, if found, are added to self.asb_dict
 
         Args:
             real_estate (RealEstate): real estate location of bill
-            provider (ServiceProvider): service provider of bill
+            service_provider (ServiceProvider): service provider of bill
             start_date (datetime.date): start date of bill
 
         Returns:
@@ -139,6 +164,20 @@ class SimpleServiceModelBase(ABC):
             MySQLException: if issue with database read
         """
         raise NotImplementedError("read_all_service_bills_from_db() not implemented by subclass")
+
+    @abstractmethod
+    def read_all_service_bills_from_db_unpaid(self):
+        """ Read all service bills that have a null paid date
+
+        Service bills are inserted in self.asb_dict
+
+        Returns:
+            list[SimpleServiceBillDataBase]: list of subclass instances. empty list if no bill with null paid date
+
+        Raises:
+            MySQLException: if issue with database read
+        """
+        raise NotImplementedError("read_all_unpaid_service_bills_from_db() not implemented by subclass")
 
     def read_real_estate_by_address(self, address):
         """ Read real estate from real_estate table by address
@@ -170,3 +209,34 @@ class SimpleServiceModelBase(ABC):
             re_list = mam.real_estate_read()
 
         return {re.id: re for re in re_list}
+
+    def read_valid_service_providers(self):
+        """ Read all valid service providers for this model from service_providers table
+
+        Returns:
+            dict: int service provider id keys to service provider values. empty dict if table has no records
+
+        Raises:
+            MySQLException: if issue with database read
+        """
+        with MySQLAM() as mam:
+            sp_list = mam.service_provider_read(wheres=[["provider", "in", self.valid_providers()]])
+
+        return {sp.id: sp for sp in sp_list}
+
+    def read_service_provider_by_enum(self, provider):
+        """ Read service provider from service_provider table by provider
+
+        Args:
+            provider (ServiceProviderEnum): provider name of service provider
+
+        Returns:
+            Optional[ServiceProvider]: if a service provider record matches provider, else None
+
+        Raises:
+            MySQLException: if issue with database read
+        """
+        with MySQLAM() as mam:
+            re_list = mam.service_provider_read(wheres=[["provider", "=", provider]])
+
+        return None if len(re_list) == 0 else re_list[0]

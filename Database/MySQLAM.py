@@ -1,18 +1,19 @@
 import pandas as pd
 from enum import Enum
-from typing import Union
+from typing import Union, Optional
 from Database.MySQLBase import MySQLBase, FetchCursor
 from Database.DBDict import DBDict
 from Database.QueryWriter import QueryWriter
 from Database.POPO.RealEstate import RealEstate
 from Database.POPO.RealPropertyValues import RealPropertyValues
 from Database.POPO.ServiceProvider import ServiceProvider
-from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
 from Database.POPO.SimpleServiceBillData import SimpleServiceBillData
 from Database.POPO.ElectricBillData import ElectricBillData
 from Database.POPO.ElectricData import ElectricData
 from Database.POPO.NatGasBillData import NatGasBillData
 from Database.POPO.NatGasData import NatGasData
+from Database.POPO.SolarBillData import SolarBillData
+from Database.POPO.MortgageBillData import MortgageBillData
 
 
 class ETFDataTypes(Enum):
@@ -837,7 +838,7 @@ class MySQLAM(MySQLBase):
             return major_endpoint + ", " + endpoint + " save function not set."
         else:
             return res
-
+    
     def real_estate_read(self, fields="*", wheres=(), order_bys=()):
         """ Read fields from real_estate table
 
@@ -857,6 +858,25 @@ class MySQLAM(MySQLBase):
 
         return [RealEstate(None, None, None, None, None, None, db_dict=d) for d in dict_list]
 
+    def service_provider_read(self, fields="*", wheres=(), order_bys=()):
+        """ Read fields from service_provider table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list[ServiceProvider]: list will be empty if no service provider data found matching wheres
+
+        Raises:
+            MySQLException: if database read issue occurs
+        """
+        qw = QueryWriter("service_provider", fields=fields, wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+
+        return [ServiceProvider(None, None, db_dict=d) for d in dict_list]
+
     def real_property_values_read(self, wheres=(), order_bys=()):
         """ Read from real_property_values table
 
@@ -873,7 +893,7 @@ class MySQLAM(MySQLBase):
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
-        dict_list = self._real_estate_read_fk(dict_list)
+        dict_list = self._help_read_fk(dict_list)
 
         data_list = []
         for d in dict_list:
@@ -912,23 +932,105 @@ class MySQLAM(MySQLBase):
 
         self.execute_commit(query, params_list=data_list, execute_many=True)
 
-    def _real_estate_read_fk(self, dict_list):
-        """ Use this function to get real_estate table data
+    def _help_read_fk(self, dict_list):
+        """ Use this function to get foreign key table data
+
+        Works for real_estate_id and service_provider_id fields
 
         Args:
-            dict_list (list[dict]): each dict in list must have key "real_estate_id"
+            dict_list (list[dict]): dicts not required to have real_estate_id or service_provider_id
 
         Returns:
             list[dict]: dict_list argument with the following key/value pair added to each dict:
                 key "real_estate" and values RealEstate instances with data for real_estate_id
+                key "service_provider" and values ServiceProvider instances with data for service_provider_id
         """
-        re_dict = self.real_estate_read(wheres=[["id", "in", list(set([d["real_estate_id"] for d in dict_list]))]])
-        re_dict = {real_estate.id: real_estate for real_estate in re_dict}
+        if len(dict_list) == 0:
+            return dict_list
 
-        for d in dict_list:
-            d["real_estate"] = re_dict[d["real_estate_id"]]
+        has_real_estate = "real_estate_id" in dict_list[0]
+        has_service_provider = "service_provider_id" in dict_list[0]
+
+        re_dict, sp_dict = {}, {}
+        if has_real_estate:
+            re_dict = self.real_estate_read(
+                wheres=[["id", "in", list(set([d["real_estate_id"] for d in dict_list]))]])
+            re_dict = {real_estate.id: real_estate for real_estate in re_dict}
+        if has_service_provider:
+            sp_dict = self.service_provider_read(
+                wheres=[["id", "in", list(set([d["service_provider_id"] for d in dict_list]))]])
+            sp_dict = {service_provider.id: service_provider for service_provider in sp_dict}
+
+        if has_real_estate or has_service_provider:
+            for d in dict_list:
+                if has_real_estate:
+                    d["real_estate"] = re_dict[d["real_estate_id"]]
+                if has_service_provider:
+                    d["service_provider"] = sp_dict[d["service_provider_id"]]
 
         return dict_list
+
+    def solar_bill_data_read(self, wheres=(), order_bys=()):
+        """ Read all fields from solar_bill_data table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list[SolarBillData]: list will be empty if no bill data found matching wheres
+
+        Raises:
+            MySQLException: if database read issue occurs
+        """
+        qw = QueryWriter("solar_bill_data", wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+        dict_list = self._help_read_fk(dict_list)
+
+        bill_list = []
+        for d in dict_list:
+            bill_list.append(SolarBillData(None, None, None, None, None, None, None, None, None, None, None, None,
+                                           db_dict=d))
+
+        return bill_list
+
+    def solar_bill_data_insert(self, bill_list):
+        """ Insert into solar_bill_data table
+
+        Args:
+            bill_list (list[SolarBillData]):
+
+        Raises:
+            MySQLException: if any required columns are missing or other database issue occurs
+        """
+        self.dictinsertable_insert("solar_bill_data", bill_list)
+
+    def solar_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
+        """ Update solar_bill_data table
+
+        See QueryWriter write_update_query() for an example
+
+        Args:
+            fields: See QueryWriter __init__ docstring. must be list[str] (not str) if bill_list is not empty
+            set_params (list[list]): See QueryWriter write_update_query() docstring. If empty list, bill_list must
+                not be empty (set_params will come from bills in this list). Default ()
+            wheres: See QueryWriter __init__ docstring. Default ().
+            where_params (Optional[list[list]]): See QueryWriter write_update_query() docstring. Default None
+            bill_list (list[SolarBillData]): See QueryWriter write_update_query() docstring. bill_list is
+                provided as an argument to objects parameter. Default ()
+
+        Raises:
+            Union[AttributeError, ValueError]: if sql query and parameters can't be properly compiled
+            MySQLException: if update issue occurs
+        """
+        qw = QueryWriter("solar_bill_data", fields=fields, wheres=wheres)
+        query, final_params = qw.write_update_query(set_params, where_params, objects=bill_list)
+
+        if query == "0":  # length of set_params is 0
+            return
+
+        self.execute_commit(query, params_list=final_params, execute_many=True)
 
     def electric_bill_data_read(self, wheres=(), order_bys=()):
         """ Read all fields from electric_bill_data table
@@ -946,7 +1048,7 @@ class MySQLAM(MySQLBase):
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
-        dict_list = self._real_estate_read_fk(dict_list)
+        dict_list = self._help_read_fk(dict_list)
 
         bill_list = []
         for d in dict_list:
@@ -964,15 +1066,33 @@ class MySQLAM(MySQLBase):
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        if len(bill_list) == 0:
+        self.dictinsertable_insert("electric_bill_data", bill_list)
+
+    def electric_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
+        """ Update electric_bill_data table
+
+        See QueryWriter write_update_query() for an example
+
+        Args:
+            fields: See QueryWriter __init__ docstring. must be list[str] (not str) if bill_list is not empty
+            set_params (list[list]): See QueryWriter write_update_query() docstring. If empty list, bill_list must
+                not be empty (set_params will come from bills in this list). Default ()
+            wheres: See QueryWriter __init__ docstring. Default ().
+            where_params (Optional[list[list]]): See QueryWriter write_update_query() docstring. Default None
+            bill_list (list[ElectricBillData]): See QueryWriter write_update_query() docstring. bill_list is
+                provided as an argument to objects parameter. Default ()
+
+        Raises:
+            Union[AttributeError, ValueError]: if sql query and parameters can't be properly compiled
+            MySQLException: if update issue occurs
+        """
+        qw = QueryWriter("electric_bill_data", fields=fields, wheres=wheres)
+        query, final_params = qw.write_update_query(set_params, where_params, objects=bill_list)
+
+        if query == "0":  # length of set_params is 0
             return
 
-        bill_list = [b.to_insert_dict() for b in bill_list]
-
-        qw = QueryWriter("electric_bill_data", fields=list(bill_list[0].keys()))
-        query, bill_list = qw.write_insert_query(bill_list)
-
-        self.execute_commit(query, params_list=bill_list, execute_many=True)
+        self.execute_commit(query, params_list=final_params, execute_many=True)
 
     def electric_data_read(self, wheres=(), order_bys=()):
         """ Read from electric_data table
@@ -990,7 +1110,7 @@ class MySQLAM(MySQLBase):
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
-        dict_list = self._real_estate_read_fk(dict_list)
+        dict_list = self._help_read_fk(dict_list)
 
         data_list = []
         for d in dict_list:
@@ -1007,15 +1127,7 @@ class MySQLAM(MySQLBase):
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        if len(data_list) == 0:
-            return
-
-        data_list = [b.to_insert_dict() for b in data_list]
-
-        qw = QueryWriter("electric_data", fields=list(data_list[0].keys()))
-        query, data_list = qw.write_insert_query(data_list)
-
-        self.execute_commit(query, params_list=data_list, execute_many=True)
+        self.dictinsertable_insert("electric_data", data_list)
 
     def estimate_notes_read(self, wheres=(), order_bys=()):
         """ Read from estimate_notes table
@@ -1033,10 +1145,7 @@ class MySQLAM(MySQLBase):
         query, params = qw.write_read_query()
 
         notes_list = self.execute_fetch(query, params=params)
-        notes_list = self._real_estate_read_fk(notes_list)
-
-        for d in notes_list:
-            d["provider"] = ServiceProvider(d["provider"])
+        notes_list = self._help_read_fk(notes_list)
 
         return notes_list
 
@@ -1056,7 +1165,7 @@ class MySQLAM(MySQLBase):
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
-        dict_list = self._real_estate_read_fk(dict_list)
+        dict_list = self._help_read_fk(dict_list)
 
         bill_list = []
         for d in dict_list:
@@ -1074,15 +1183,33 @@ class MySQLAM(MySQLBase):
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        if len(bill_list) == 0:
+        self.dictinsertable_insert("natgas_bill_data", bill_list)
+
+    def natgas_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
+        """ Update natgas_bill_data table
+
+        See QueryWriter write_update_query() for an example
+
+        Args:
+            fields: See QueryWriter __init__ docstring. must be list[str] (not str) if bill_list is not empty
+            set_params (list[list]): See QueryWriter write_update_query() docstring. If empty list, bill_list must
+                not be empty (set_params will come from bills in this list). Default ()
+            wheres: See QueryWriter __init__ docstring. Default ().
+            where_params (Optional[list[list]]): See QueryWriter write_update_query() docstring. Default None
+            bill_list (list[NatGasBillData]): See QueryWriter write_update_query() docstring. bill_list is
+                provided as an argument to objects parameter. Default ()
+
+        Raises:
+            Union[AttributeError, ValueError]: if sql query and parameters can't be properly compiled
+            MySQLException: if update issue occurs
+        """
+        qw = QueryWriter("natgas_bill_data", fields=fields, wheres=wheres)
+        query, final_params = qw.write_update_query(set_params, where_params, objects=bill_list)
+
+        if query == "0":  # length of set_params is 0
             return
 
-        bill_list = [b.to_insert_dict() for b in bill_list]
-
-        qw = QueryWriter("natgas_bill_data", fields=list(bill_list[0].keys()))
-        query, bill_list = qw.write_insert_query(bill_list)
-
-        self.execute_commit(query, params_list=bill_list, execute_many=True)
+        self.execute_commit(query, params_list=final_params, execute_many=True)
 
     def natgas_data_read(self, wheres=(), order_bys=()):
         """ Read from natgas_data table
@@ -1100,7 +1227,7 @@ class MySQLAM(MySQLBase):
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
-        dict_list = self._real_estate_read_fk(dict_list)
+        dict_list = self._help_read_fk(dict_list)
 
         data_list = []
         for d in dict_list:
@@ -1117,35 +1244,44 @@ class MySQLAM(MySQLBase):
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        if len(data_list) == 0:
-            return
-
-        data_list = [b.to_insert_dict() for b in data_list]
-
-        qw = QueryWriter("natgas_data", fields=list(data_list[0].keys()))
-        query, data_list = qw.write_insert_query(data_list)
-
-        self.execute_commit(query, params_list=data_list, execute_many=True)
+        self.dictinsertable_insert("natgas_data", data_list)
 
     def simple_bill_data_insert(self, bill_list):
         """ Insert into simple_bill_data table
 
         Args:
-            bill_list (list[SimpleServiceBillDataBase]): provider must be a simple bill provider. See ServiceProvider
+            bill_list (list[SimpleServiceBillData]):
 
         Raises:
-            ValueError: if the provider for any bill in bill_list does not have a simple bill
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        if len(bill_list) == 0:
+        self.dictinsertable_insert("simple_bill_data", bill_list)
+
+    def simple_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
+        """ Update simple_bill_data table
+
+        See QueryWriter write_update_query() for an example
+
+        Args:
+            fields: See QueryWriter __init__ docstring. must be list[str] (not str) if bill_list is not empty
+            set_params (list[list]): See QueryWriter write_update_query() docstring. If empty list, bill_list must
+                not be empty (set_params will come from bills in this list). Default ()
+            wheres: See QueryWriter __init__ docstring. Default ().
+            where_params (Optional[list[list]]): See QueryWriter write_update_query() docstring. Default None
+            bill_list (list[SimpleServiceBillData]): See QueryWriter write_update_query() docstring. bill_list is
+                provided as an argument to objects parameter. Default ()
+
+        Raises:
+            Union[AttributeError, ValueError]: if sql query and parameters can't be properly compiled
+            MySQLException: if update issue occurs
+        """
+        qw = QueryWriter("simple_bill_data", fields=fields, wheres=wheres)
+        query, final_params = qw.write_update_query(set_params, where_params, objects=bill_list)
+
+        if query == "0":  # length of set_params is 0
             return
 
-        bill_list = [b.to_insert_dict() for b in bill_list]
-
-        qw = QueryWriter("simple_bill_data", fields=list(bill_list[0].keys()))
-        query, bill_list = qw.write_insert_query(bill_list)
-
-        self.execute_commit(query, params_list=bill_list, execute_many=True)
+        self.execute_commit(query, params_list=final_params, execute_many=True)
 
     def simple_bill_data_read(self, wheres=(), order_bys=()):
         """ Read all fields from simple_bill_data table
@@ -1163,10 +1299,72 @@ class MySQLAM(MySQLBase):
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
-        dict_list = self._real_estate_read_fk(dict_list)
+        dict_list = self._help_read_fk(dict_list)
 
         bill_list = []
         for d in dict_list:
             bill_list.append(SimpleServiceBillData(None, None, None, None, None, db_dict=d))
+
+        return bill_list
+
+    def mortgage_bill_data_insert(self, bill_list):
+        """ Insert into mortgage_bill_data table
+
+        Args:
+            bill_list (list[MortgageBillData]):
+
+        Raises:
+            MySQLException: if any required columns are missing or other database issue occurs
+        """
+        self.dictinsertable_insert("mortgage_bill_data", bill_list)
+
+    def mortgage_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
+        """ Update mortgage_bill_data table
+
+        See QueryWriter write_update_query() for an example
+
+        Args:
+            fields: See QueryWriter __init__ docstring. must be list[str] (not str) if bill_list is not empty
+            set_params (list[list]): See QueryWriter write_update_query() docstring. If empty list, bill_list must
+                not be empty (set_params will come from bills in this list). Default ()
+            wheres: See QueryWriter __init__ docstring. Default ().
+            where_params (Optional[list[list]]): See QueryWriter write_update_query() docstring. Default None
+            bill_list (list[MortgageBillData]): See QueryWriter write_update_query() docstring. bill_list is
+                provided as an argument to objects parameter. Default ()
+
+        Raises:
+            Union[AttributeError, ValueError]: if sql query and parameters can't be properly compiled
+            MySQLException: if update issue occurs
+        """
+        qw = QueryWriter("mortgage_bill_data", fields=fields, wheres=wheres)
+        query, final_params = qw.write_update_query(set_params, where_params, objects=bill_list)
+
+        if query == "0":  # length of set_params is 0
+            return
+
+        self.execute_commit(query, params_list=final_params, execute_many=True)
+
+    def mortgage_bill_data_read(self, wheres=(), order_bys=()):
+        """ Read all fields from mortgage_bill_data table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list[MortgageBillData]: list will be empty if no bill data found matching wheres
+
+        Raises:
+            MySQLException: if database read issue occurs
+        """
+        qw = QueryWriter("mortgage_bill_data", wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+        dict_list = self._help_read_fk(dict_list)
+
+        bill_list = []
+        for d in dict_list:
+            bill_list.append(MortgageBillData(None, None, None, None, None, None, None, None, None, None, None,
+                                              db_dict=d))
 
         return bill_list
