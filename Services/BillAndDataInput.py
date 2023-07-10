@@ -9,6 +9,7 @@ from Database.POPO.ElectricBillData import ElectricBillData
 from Database.POPO.NatGasBillData import NatGasBillData
 from Database.POPO.UtilityDataBase import UtilityDataBase
 from Database.POPO.MortgageBillData import MortgageBillData
+from Database.POPO.DepreciationBillData import DepreciationBillData
 from Services.Simple.Model.SimpleServiceModel import SimpleServiceModel
 from Services.Simple.View.SimpleViewBase import SimpleViewBase
 from Services.Model.ComplexServiceModelBase import ComplexServiceModelBase
@@ -21,6 +22,8 @@ from Services.Mortgage.View.MortgageViewBase import MortgageViewBase
 from Services.Electric.View.PSEGViewBase import PSEGViewBase
 from Services.Electric.View.SolarViewBase import SolarViewBase
 from Services.NatGas.View.NGViewBase import NGViewBase
+from Services.Depreciation.Model.DepreciationModel import DepreciationModel
+from Services.Depreciation.View.DepreciationViewBase import DepreciationViewBase
 
 
 class BillAndDataInput:
@@ -31,7 +34,7 @@ class BillAndDataInput:
     """
 
     def __init__(self, simple_model, simple_view, mortgage_model, mortgage_view, solar_model, solar_view, pseg_model,
-                 pseg_view, ng_model, ng_view):
+                 pseg_view, ng_model, ng_view, dep_model, dep_view):
         """ init function
 
         Args:
@@ -45,6 +48,8 @@ class BillAndDataInput:
             pseg_view (PSEGViewBase): a subclass since base has no implemented functions
             ng_model (NG):
             ng_view (NGViewBase): a subclass since base has no implemented functions
+            dep_model (DepreciationModel):
+            dep_view (DepreciationViewBase): a subclass since base has no implemented functions
         """
         self.simple_model = simple_model
         self.simple_view = simple_view
@@ -56,6 +61,8 @@ class BillAndDataInput:
         self.pseg_view = pseg_view
         self.ng_model = ng_model
         self.ng_view = ng_view
+        self.dep_model = dep_model
+        self.dep_view = dep_view
 
     def do_simple_bill_process(self):
         """ Run process to input or read simple bill data and store data to table
@@ -273,10 +280,11 @@ class BillAndDataInput:
                 print("3: Electric Bill Paid Dates")
                 print("4: Natural Gas Bill Paid Dates")
                 print("5: Mortgage Bill Paid Dates")
-                print("0: Return to Main Menu")
+                print("6: Depreciation Bill Paid Dates")
+                print("0: Return to Bill or Data Input or Create Menu")
                 opt = input("\nSelection: ")
 
-                if opt in ["1", "2", "3", "4", "5"]:
+                if opt in ["1", "2", "3", "4", "5", "6"]:
                     if opt == "1":
                         (model, view) = (self.simple_model, self.simple_view)
                     elif opt == "2":
@@ -285,8 +293,10 @@ class BillAndDataInput:
                         (model, view) = (self.pseg_model, self.pseg_view)
                     elif opt == "4":
                         (model, view) = (self.ng_model, self.ng_view)
-                    else:  # opt == "5":
+                    elif opt == "5":
                         (model, view) = (self.mortgage_model, self.mortgage_view)
+                    else:  # opt == "6":
+                        (model, view) = (self.dep_model, self.dep_view)
 
                     unpaid_bill_list = model.read_all_service_bills_from_db_unpaid()
                     if len(unpaid_bill_list) > 0:
@@ -303,20 +313,61 @@ class BillAndDataInput:
                 print(colorama.Fore.RED, str(ex))
                 print(colorama.Style.RESET_ALL)
 
-    def do_main_menu_console_process(self):
-        """ Run main menu process through console to select bill related process options """
+    def do_depreciation_bill_process(self):
+        """ Run process to create depreciation bills and store data to table
+
+        Returns:
+            list[DepreciationBillData]: all bills created by this process
+        """
+        # get real estate
+        re_dict = self.dep_model.read_all_real_estate()
+        re_id = self.dep_view.input_select_real_estate(re_dict)
+        real_estate = re_dict[re_id]
+
+        # get service provider
+        sp_dict = self.dep_model.read_valid_service_providers()
+        sp_id = self.dep_view.input_select_service_provider(sp_dict)
+        service_provider = sp_dict[sp_id]
+
+        # get year
+        year = self.dep_view.input_depreciation_year()
+
+        # create bills for depreciable items and make a list of non depreciable items. period usage considered later
+        bill_list, nd_list = self.dep_model.create_bills(real_estate, service_provider, year)
+
+        # enter period usage for each depreciable item
+        bill_list = self.dep_view.input_period_usages(bill_list)
+
+        # apply period usage to bills
+        self.dep_model.apply_period_usage_to_bills(bill_list)
+
+        # store to table
+        self.dep_model.insert_service_bills_to_db(bill_list)
+
+        # TODO report on created bills
+        print("\n**** Depreciation Bill Report ****")
+        print("\n**** Depreciable Bills ****")
+        print("\n**** Non-Depreciable Items ****")
+
+        self.dep_model.clear_model()
+
+        return bill_list
+
+    def do_input_or_create_bill_process(self):
+        """ Select and run bill or data input or create process through console """
 
         while True:
             try:
-                print("######################################################################")
-                print("Choose a bill or data option from the following:\n")
+                print("\n######################################################################")
+                print("Choose a bill or data input or create option from the following:\n")
                 print("1: Input Simple Bill")
                 print("2: Input Solar Bill")
                 print("3: Input Electric Bill and Related Data")
                 print("4: Input Natural Gas Bill and Related Data")
                 print("5: Input Mortgage Bill")
                 print("6: Input Missing Paid Dates")
-                print("0: Exit Program")
+                print("7: Run Depreciation Bill Process")
+                print("0: Return to Main Menu")
                 opt = input("\nSelection: ")
 
                 if opt == "1":
@@ -331,6 +382,36 @@ class BillAndDataInput:
                     self.do_mortgage_bill_process()
                 elif opt == "6":
                     self.do_paid_date_process()
+                elif opt == "7":
+                    self.do_depreciation_bill_process()
+                elif opt == "0":
+                    break
+                else:
+                    print(opt + " is not a valid option. Try again.")
+            except Exception as ex:
+                print(colorama.Fore.RED, str(ex))
+                print(colorama.Style.RESET_ALL)
+
+    # TODO this function
+    def do_display_process(self):
+        pass
+
+    def do_main_menu_console_process(self):
+        """ Run main menu process through console to select bill or data related options """
+
+        while True:
+            try:
+                print("\n######################################################################")
+                print("Choose a bill or data option from the following:\n")
+                print("1: Input or Create Bills")
+                print("2: Display Bill Data")
+                print("0: Exit Program")
+                opt = input("\nSelection: ")
+
+                if opt == "1":
+                    self.do_input_or_create_bill_process()
+                elif opt == "2":
+                    self.do_display_process()
                 elif opt == "0":
                     break
                 else:

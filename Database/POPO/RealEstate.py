@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import Optional
 from enum import Enum
+from Database.POPO.DataFrameable import DataFrameable
 
 
 class Address(Enum):
@@ -43,7 +44,7 @@ class Address(Enum):
             raise ValueError("No short name set for Address: " + str(self))
 
 
-class RealEstate:
+class RealEstate(DataFrameable):
     """ Real estate data
 
     Attributes:
@@ -78,10 +79,9 @@ class RealEstate:
             if isinstance(self.address, str):
                 self.address = Address(self.address)
 
-    def to_pd_df(self):
-        """ Convert instance attributes to single row pandas dataframe
+    def to_pd_df(self, deprivatize=True, **kwargs):
+        """ see superclass docstring
 
-        Returns:
-            pd.DataFrame: columns are attributes
+        No changes made to any instance attributes
         """
         return pd.DataFrame(self.__dict__, index=[0])

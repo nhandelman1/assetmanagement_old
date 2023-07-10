@@ -1,4 +1,5 @@
 import colorama
+import os
 from Services.View.SimpleConsoleUIBase import SimpleConsoleUIBase
 from Services.Electric.View.SolarViewBase import SolarViewBase
 
@@ -18,7 +19,7 @@ class SolarConsoleUI(SimpleConsoleUIBase, SolarViewBase):
         print(colorama.Style.RESET_ALL)
 
     def input_read_new_bill(self):
-        print("\nGo to Services -> Electric -> SunpowerFiles directory and use template file to create a new solar "
+        print("\nGo to " + str(os.getenv("FI_SUNPOWER_DIR")) + " directory and use template file to create a new solar "
               "bill. Save file in the same directory.")
         filename = input("Enter solar bill file name (include extension): ")
 
@@ -33,7 +34,7 @@ class SolarConsoleUI(SimpleConsoleUIBase, SolarViewBase):
     def input_read_new_hourly_data_file(self, start_date, end_date):
         print("\nGet sunpower hourly data file with data from " + str(start_date) + " through "
               + str(end_date))
-        print("Save file to Services -> Electric -> SunpowerFiles directory.")
+        print("Save file to " + str(os.getenv("FI_SUNPOWER_DIR")) + " directory.")
         filename = input("Enter filename: ")
 
         return filename

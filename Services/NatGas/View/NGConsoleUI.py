@@ -1,3 +1,4 @@
+import os
 from Services.View.ComplexConsoleUIBase import ComplexConsoleUIBase
 from Services.NatGas.View.NGViewBase import NGViewBase
 from Database.POPO.ServiceProvider import ServiceProviderEnum
@@ -16,7 +17,7 @@ class NGConsoleUI(ComplexConsoleUIBase, NGViewBase):
         return opt
 
     def input_read_new_bill(self):
-        print("\nSave natural gas bill to Services -> NatGas -> NGFiles directory.")
+        print("\nSave natural gas bill to " + str(os.getenv("FI_NATIONALGRID_DIR")) + " directory.")
         filename = input("Enter natural gas bill file name (include extension): ")
 
         return filename

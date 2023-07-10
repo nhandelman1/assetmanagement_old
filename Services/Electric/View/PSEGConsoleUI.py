@@ -1,3 +1,4 @@
+import os
 from Services.View.ComplexConsoleUIBase import ComplexConsoleUIBase
 from Services.Electric.View.PSEGViewBase import PSEGViewBase
 from Database.POPO.ServiceProvider import ServiceProviderEnum
@@ -16,7 +17,7 @@ class PSEGConsoleUI(ComplexConsoleUIBase, PSEGViewBase):
         return opt
 
     def input_read_new_bill(self):
-        print("\nSave electric bill to Services -> Electric -> PSEGFiles directory.")
+        print("\nSave electric bill to " + str(os.getenv("FI_PSEG_DIR")) + " directory.")
         filename = input("Enter electric bill file name (include extension): ")
 
         return filename

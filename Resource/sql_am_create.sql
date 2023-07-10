@@ -400,14 +400,17 @@ create table service_provider (
 	tax_category enum('CleaningMaintenance', 'Depreciation', 'Income', 'Insurance', 'MortgageInterest', 'None', 'Repairs', 'Supplies', 'Taxes', 'Utilities') not null
 );
 
+#alter table real_property_values modify dep_class enum('None-None-None-None', 'GDS-RRP-SL-MM', 'GDS-YEAR5-SL-MM') not null;
 create table real_property_values (
 	id smallint not null auto_increment primary key,
     real_estate_id smallint not null,
     item varchar(100) not null,
     purchase_date date not null,
+    disposal_date date,
     cost_basis decimal(11, 2) not null,
-    dep_class enum('None', 'GDS-RRP') not null,
+    dep_class enum('None-None-None-None', 'GDS-RRP-SL-MM', 'GDS-YEAR5-SL-MM') not null,
     notes text,
+    unique key unique_reid_item_purchasedate (real_estate_id, item, purchase_date),
     foreign key (real_estate_id) references real_estate (id)
 );
 
@@ -632,3 +635,23 @@ create table mortgage_bill_data (
     foreign key (service_provider_id) references service_provider(id)
 );
 
+# depreciation bills are yearly bills per item (real_property_values)
+# paid_date can be any date in the year (choose to use 12-31)
+create table depreciation_bill_data (
+	id int not null auto_increment primary key,
+    real_estate_id smallint not null,
+    service_provider_id smallint not null,
+    real_property_values_id smallint not null,
+	start_date date not null check (start_date like "%-01-01"),
+    end_date date not null check (end_date like "%-12-31"),
+    # "period" instead of "year" due to purchase date or disposal date probably aren't on Jan 1st
+    period_usage_pct decimal(5,2) not null check (period_usage_pct>=000.00 and period_usage_pct <= 100.00),
+    total_cost decimal(8,2) not null,
+    paid_date date check (paid_date like "%-12-31"),
+    notes text,
+    # one depreciation bill per depreciation item per year
+    unique key unique_rpvid_startdate_enddate (real_property_values_id, start_date, end_date),
+    foreign key (real_estate_id) references real_estate (id),
+    foreign key (service_provider_id) references service_provider(id),
+    foreign key (real_property_values_id) references real_property_values(id)
+);

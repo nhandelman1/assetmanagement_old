@@ -27,19 +27,18 @@ class SimpleServiceModel(SimpleServiceModelBase):
 
         SPE = ServiceProviderEnum
         Returns:
-            list[ServiceProviderEnum]: [SPE.BCPH_REP, SPE.DEP_DEP, SPE.HD_SUP, SPE.HOAT_REP, SPE.KPC_CM, SPE.MS_MI,
-                SPE.NB_INS, SPE.OH_INS, SPE.OC_UTI, SPE.OI_UTI, SPE.SCWA_UTI, SPE.SC_TAX, SPE.WMT_SUP,
-                SPE.WL_10_APT_TEN_INC, SPE.WP_REP,  SPE.VI_UTI, SPE.YTV_UTI]
+            list[ServiceProviderEnum]: [SPE.BCPH_REP, SPE.HD_SUP, SPE.HOAT_REP, SPE.KPC_CM, SPE.MS_MI, SPE.NB_INS,
+                SPE.OH_INS, SPE.OC_UTI, SPE.OI_UTI, SPE.SCWA_UTI, SPE.SC_TAX, SPE.WMT_SUP, SPE.WL_10_APT_TEN_INC,
+                SPE.WP_REP,  SPE.VI_UTI, SPE.YTV_UTI]
         """
         SPE = ServiceProviderEnum
-        return [SPE.BCPH_REP, SPE.DEP_DEP, SPE.HD_SUP, SPE.HOAT_REP, SPE.KPC_CM, SPE.NB_INS, SPE.OH_INS, SPE.OC_UTI,
-                SPE.OI_UTI, SPE.SCWA_UTI, SPE.SC_TAX, SPE.WMT_SUP, SPE.WL_10_APT_TEN_INC, SPE.WP_REP, SPE.VI_UTI,
-                SPE.YTV_UTI]
+        return [SPE.BCPH_REP, SPE.HD_SUP, SPE.HOAT_REP, SPE.KPC_CM, SPE.NB_INS, SPE.OH_INS, SPE.OC_UTI, SPE.OI_UTI,
+                SPE.SCWA_UTI, SPE.SC_TAX, SPE.WMT_SUP, SPE.WL_10_APT_TEN_INC, SPE.WP_REP, SPE.VI_UTI, SPE.YTV_UTI]
 
     def save_to_file(self, bill):
         """ Save simple bill to file with same format as SimpleServiceBillTemplate.csv
 
-        File saved to Services -> Simple -> SimpleFiles directory. Existing file will not be overwritten (see next note)
+        File saved to .env FI_SIMPLE_DIR directory. Existing file will not be overwritten (see next note)
         Filename format: shortaddress_providername_startdate_enddate_*.csv
             * (int): if this file exists, replace star with next int in sequence until new file name is created
 
@@ -49,7 +48,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
         def to_fn(ver):
             fn = bill.real_estate.address.short_name() + "_" + str(bill.service_provider.provider.value) + "_" \
                    + str(bill.start_date) + "_" + str(bill.end_date) + "_" + str(ver) + ".csv"
-            return fn, pathlib.Path(__file__).parent.parent / ("SimpleFiles/" + fn)
+            return fn, pathlib.Path(__file__).parent.parent.parent.parent / (os.getenv("FI_SIMPLE_DIR") + fn)
 
         filename, full_path = to_fn(1)
         while os.path.exists(full_path):
@@ -67,7 +66,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
     def process_service_bill(self, filename):
         """ Open, process and return simple service bill in same format as SimpleServiceBillTemplate.csv
 
-        See directory Services/Simple/SimpleFiles for SimpleServiceBillTemplate.csv
+        See directory specified by FI_SIMPLE_DIR in .env for SimpleServiceBillTemplate.csv
             address: valid values found in Database.POPO.RealEstate.Address values
             provider: see self.valid_providers() then Database.POPO.ServiceProvider.ServiceProviderEnum for valid values
             dates: YYYY-MM-DD format
@@ -75,7 +74,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
         Returned instance of SimpleServiceBillData is added to self.asb_dict
 
         Args:
-            filename (str): name of file in Services/Simple/SimpleFiles directory
+            filename (str): name of file in directory specified by FI_SIMPLE_DIR in .env
 
         Returns:
             SimpleServiceBillData: all attributes are set with bill values except id and paid_date. id is set to None
@@ -84,7 +83,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
         Raises:
             ValueError: if address or service provider not found or value is not in correct format
         """
-        df = pd.read_csv(pathlib.Path(__file__).parent.parent / ("SimpleFiles/" + filename))
+        df = pd.read_csv(pathlib.Path(__file__).parent.parent.parent.parent / (os.getenv("FI_SIMPLE_DIR") + filename))
 
         address = df.loc[0, "address"]
         real_estate = self.read_real_estate_by_address(Address.to_address(address))

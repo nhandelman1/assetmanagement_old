@@ -6,7 +6,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 select * from real_estate;
 select * from service_provider;
-select * from real_property_values;
+select * from real_property_value;
 select * from mysunpower_hourly_data order by dt desc;
 select * from electric_bill_data;
 select * from electric_data;
@@ -18,6 +18,7 @@ select * from natgas_data;
 select * from simple_bill_data;
 select * from solar_bill_data;
 select * from mortgage_bill_data;
+select * from depreciation_bill_data;
 
 insert into estimate_notes (real_estate_id, provider, note_type, note, note_order) values 
 (1, 'NationalGrid', 'wna_low_rate', 

@@ -1,4 +1,5 @@
 import datetime
+import os
 import pathlib
 import pandas as pd
 import tabula
@@ -32,13 +33,13 @@ class NG(ComplexServiceModelBase):
         Returned instance of NatGasBillData is added to self.asb_dict
 
         Args:
-            filename (str): name of file in Services/NatGas/NGFiles directory
+            filename (str): name of file in directory specified by FI_NATIONALGRID_DIR in .env
 
         Returns:
             NatGasBillData: with all required fields populated and as many non required fields as available populated
         """
-        df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent / ("NGFiles/" + filename), pages="all",
-                                  password="11720", guess=False)
+        df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
+                            (os.getenv("FI_NATIONALGRID_DIR") + filename), pages="all", password="11720", guess=False)
         bill_data = NatGasBillData(None, None, None, None, None, 0, None, None, None, None,
                                    None, None, None, None, None, None, None, True)
 

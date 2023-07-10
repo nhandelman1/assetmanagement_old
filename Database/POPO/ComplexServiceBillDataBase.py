@@ -38,5 +38,7 @@ class ComplexServiceBillDataBase(SimpleServiceBillDataBase):
             db_dict (Optional[dict]): dictionary with instance variables as keys. Default None to do no update
         """
         if isinstance(db_dict, dict):
-            self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
+            # use this method of setting attributes instead of __dict__.update to property set private attributes
+            for key, value in db_dict.items():
+                setattr(self, key, value)
             self.is_actual = bool(self.is_actual)

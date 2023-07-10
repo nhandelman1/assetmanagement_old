@@ -65,7 +65,8 @@ class SimpleConsoleUIBase(SimpleServiceViewBase):
                 date = datetime.datetime.strptime(date, "%Y%m%d").date()
                 break
             except ValueError:
-                print("Invalid date format. Try again.")
+                print(colorama.Fore.RED, "Invalid date format. Try again.")
+                print(colorama.Style.RESET_ALL)
 
         return date
 

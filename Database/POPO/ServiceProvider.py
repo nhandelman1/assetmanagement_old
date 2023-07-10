@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import Optional
 from enum import Enum
+from Database.POPO.DataFrameable import DataFrameable
 
 
 class TaxCategory(Enum):
@@ -43,7 +44,7 @@ class ServiceProviderEnum(Enum):
     YTV_UTI = "YoutubeTV-UTI"
 
 
-class ServiceProvider:
+class ServiceProvider(DataFrameable):
     """ Service provider data
 
     Attributes:
@@ -69,10 +70,9 @@ class ServiceProvider:
             if isinstance(self.tax_category, str):
                 self.tax_category = TaxCategory(self.tax_category)
 
-    def to_pd_df(self):
-        """ Convert instance attributes to single row pandas dataframe
+    def to_pd_df(self, deprivative=True, **kwargs):
+        """ see superclass docstring
 
-        Returns:
-            pd.DataFrame: columns are attributes
+        No changes made to any instance attributes
         """
         return pd.DataFrame(self.__dict__, index=[0])

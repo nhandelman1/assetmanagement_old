@@ -1,6 +1,9 @@
+import datetime
+import os
 import pandas as pd
 from enum import Enum
 from typing import Union, Optional
+from decimal import Decimal
 from Database.MySQLBase import MySQLBase, FetchCursor
 from Database.DBDict import DBDict
 from Database.QueryWriter import QueryWriter
@@ -14,6 +17,7 @@ from Database.POPO.NatGasBillData import NatGasBillData
 from Database.POPO.NatGasData import NatGasData
 from Database.POPO.SolarBillData import SolarBillData
 from Database.POPO.MortgageBillData import MortgageBillData
+from Database.POPO.DepreciationBillData import DepreciationBillData
 
 
 class ETFDataTypes(Enum):
@@ -46,9 +50,9 @@ class MySQLAM(MySQLBase):
     """
     def __init__(self, fetch_cursor=FetchCursor.LIST_DICT):
         """Init MySQLAM """
-        # TODO need to setup to use correct db name for dev and prod
-        super(MySQLAM, self).__init__(host="localhost", user="root", password="=a4tUtheWur_n8=udAs_aZ7qeB84w=",
-                                      db_name="am_dev", fetch_cursor=fetch_cursor)
+        super(MySQLAM, self).__init__(host=os.getenv("MYSQL_HOST"), user=os.getenv("MYSQL_USER"),
+                                      password=os.getenv("MYSQL_PASSWORD"), db_name=os.getenv("MYSQL_NAME"),
+                                      fetch_cursor=fetch_cursor)
 
     @MySQLBase.fetch_cursor.setter
     def fetch_cursor(self, fetch_cursor):
@@ -935,7 +939,7 @@ class MySQLAM(MySQLBase):
     def _help_read_fk(self, dict_list):
         """ Use this function to get foreign key table data
 
-        Works for real_estate_id and service_provider_id fields
+        Works for real_estate_id, service_provider_id and real_property_values_id fields
 
         Args:
             dict_list (list[dict]): dicts not required to have real_estate_id or service_provider_id
@@ -950,8 +954,9 @@ class MySQLAM(MySQLBase):
 
         has_real_estate = "real_estate_id" in dict_list[0]
         has_service_provider = "service_provider_id" in dict_list[0]
+        has_real_property_values = "real_property_values_id" in dict_list[0]
 
-        re_dict, sp_dict = {}, {}
+        re_dict, sp_dict, rpv_dict = {}, {}, {}
         if has_real_estate:
             re_dict = self.real_estate_read(
                 wheres=[["id", "in", list(set([d["real_estate_id"] for d in dict_list]))]])
@@ -960,13 +965,19 @@ class MySQLAM(MySQLBase):
             sp_dict = self.service_provider_read(
                 wheres=[["id", "in", list(set([d["service_provider_id"] for d in dict_list]))]])
             sp_dict = {service_provider.id: service_provider for service_provider in sp_dict}
+        if has_real_property_values:
+            rpv_dict = self.real_property_values_read(
+                wheres=[["id", "in", list(set([d["real_property_values_id"] for d in dict_list]))]])
+            rpv_dict = {real_property_values.id: real_property_values for real_property_values in rpv_dict}
 
-        if has_real_estate or has_service_provider:
+        if has_real_estate or has_service_provider or has_real_property_values:
             for d in dict_list:
                 if has_real_estate:
                     d["real_estate"] = re_dict[d["real_estate_id"]]
                 if has_service_provider:
                     d["service_provider"] = sp_dict[d["service_provider_id"]]
+                if has_real_property_values:
+                    d["real_property_values"] = rpv_dict[d["real_property_values_id"]]
 
         return dict_list
 
@@ -1366,5 +1377,69 @@ class MySQLAM(MySQLBase):
         for d in dict_list:
             bill_list.append(MortgageBillData(None, None, None, None, None, None, None, None, None, None, None,
                                               db_dict=d))
+
+        return bill_list
+
+    def depreciation_bill_data_insert(self, bill_list):
+        """ Insert into depreciation_bill_data table
+
+        Args:
+            bill_list (list[DepreciationBillData]):
+
+        Raises:
+            MySQLException: if any required columns are missing or other database issue occurs
+        """
+        self.dictinsertable_insert("depreciation_bill_data", bill_list)
+
+    def depreciation_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
+        """ Update depreciation_bill_data table
+
+        See QueryWriter write_update_query() for an example
+
+        Args:
+            fields: See QueryWriter __init__ docstring. must be list[str] (not str) if bill_list is not empty
+            set_params (list[list]): See QueryWriter write_update_query() docstring. If empty list, bill_list must
+                not be empty (set_params will come from bills in this list). Default ()
+            wheres: See QueryWriter __init__ docstring. Default ().
+            where_params (Optional[list[list]]): See QueryWriter write_update_query() docstring. Default None
+            bill_list (list[DepreciationBillData]): See QueryWriter write_update_query() docstring. bill_list is
+                provided as an argument to objects parameter. Default ()
+
+        Raises:
+            Union[AttributeError, ValueError]: if sql query and parameters can't be properly compiled
+            MySQLException: if update issue occurs
+        """
+        qw = QueryWriter("depreciation_bill_data", fields=fields, wheres=wheres)
+        query, final_params = qw.write_update_query(set_params, where_params, objects=bill_list)
+
+        if query == "0":  # length of set_params is 0
+            return
+
+        self.execute_commit(query, params_list=final_params, execute_many=True)
+
+    def depreciation_bill_data_read(self, wheres=(), order_bys=()):
+        """ Read all fields from depreciation_bill_data table
+
+        Args:
+            see QueryWriter
+
+        Returns:
+            list[DepreciationBillData]: list will be empty if no bill data found matching wheres
+
+        Raises:
+            MySQLException: if database read issue occurs
+        """
+        qw = QueryWriter("depreciation_bill_data", wheres=wheres, order_bys=order_bys)
+        query, params = qw.write_read_query()
+
+        dict_list = self.execute_fetch(query, params=params)
+        dict_list = self._help_read_fk(dict_list)
+
+        bill_list = []
+        for d in dict_list:
+            # datetime.date(2020, 1, 1) is a default value that will be overwritten by values in d
+            # Decimal(0) is a default value that will be overwritten by value in d
+            bill_list.append(DepreciationBillData(None, None, None, datetime.date(2020, 1, 1),
+                                                  datetime.date(2020, 12, 31), Decimal(0), None, db_dict=d))
 
         return bill_list

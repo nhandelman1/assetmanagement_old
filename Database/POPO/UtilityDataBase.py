@@ -50,7 +50,9 @@ class UtilityDataBase(DictInsertable, ABC):
         """
         # use db_dict to update instance variables
         if isinstance(db_dict, dict):
-            self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
+            # use this method of setting attributes instead of __dict__.update to property set private attributes
+            for key, value in db_dict.items():
+                setattr(self, key, value)
 
     def to_insert_dict(self):
         """ Convert class to dict

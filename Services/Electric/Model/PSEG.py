@@ -1,4 +1,5 @@
 import datetime
+import os
 import pathlib
 import tabula
 import pandas as pd
@@ -32,13 +33,13 @@ class PSEG(ComplexServiceModelBase):
         Returned instance of ElectricBillData is added to self.asb_dict
 
         Args:
-            filename (str): name of file in Services/Electric/PSEGFiles directory
+            filename (str): name of file in directory specified by FI_PSEG_DIR in .env
 
         Returns:
             ElectricBillData: with all required fields populated and as many non required fields as available populated
         """
-        df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent / ("PSEGFiles/" + filename), pages="all",
-                                  password="11720", guess=False)
+        df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
+                                  (os.getenv("FI_PSEG_DIR") + filename), pages="all", password="11720", guess=False)
         bill_data = ElectricBillData(None, None, None, None, None, 0, 0, None, None, None, None, None, True)
 
         # get start date and end date from 1st page

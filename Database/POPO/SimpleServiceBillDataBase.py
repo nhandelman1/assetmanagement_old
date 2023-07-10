@@ -3,11 +3,12 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from decimal import Decimal
 from Database.MySQLBase import DictInsertable
+from Database.POPO.DataFrameable import DataFrameable
 from Database.POPO.RealEstate import RealEstate
 from Database.POPO.ServiceProvider import ServiceProvider
 
 
-class SimpleServiceBillDataBase(DictInsertable, ABC):
+class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
     """ Base class for simple data provided on service bill or relevant to service bill
 
     Simple data is for services actually provided and includes location (real estate), provider, start date, end date,
@@ -44,21 +45,63 @@ class SimpleServiceBillDataBase(DictInsertable, ABC):
         self.paid_date = paid_date
         self.notes = notes
 
+    @property
+    def start_date(self):
+        return self._start_date
+
+    @start_date.setter
+    def start_date(self, start_date):
+        """ It may be the case that subclasses will limit possible start_date values
+
+        Args:
+            see __init__ docstring start_date
+        """
+        self._start_date = start_date
+
+    @property
+    def end_date(self):
+        return self._end_date
+
+    @end_date.setter
+    def end_date(self, end_date):
+        """ It may be the case that subclasses will limit possible end_date values
+
+        Args:
+            see __init__ docstring end_date
+        """
+        self._end_date = end_date
+
+    @property
+    def paid_date(self):
+        return self._paid_date
+
+    @paid_date.setter
+    def paid_date(self, paid_date):
+        """ It may be the case that subclasses will limit possible paid_date values
+
+        Args:
+            see __init__ docstring paid_date
+        """
+        self._paid_date = paid_date
+
     def db_dict_update(self, db_dict):
         """ Use db_dict to update instance variables
 
         Args:
-            db_dict (Optional[dict]): dictionary with instance variables as keys. Default None to do no update
+            db_dict (Optional[dict]): dictionary with instance variables as str keys. Default None to do no update
         """
         if isinstance(db_dict, dict):
-            self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
+            # use this method of setting attributes instead of __dict__.update to property set private attributes
+            for key, value in db_dict.items():
+                setattr(self, key, value)
 
     def to_insert_dict(self):
-        """ Convert class to dict
+        """ Convert class attributes to MySQL insertable dict
 
-        "id" and "real_estate" fields are not included in returned dict
+        "id", "real_estate", "service_provider" attributes are not included in returned dict
         "real_estate_id" key is added with value = self.real_estate.id
         "service_provider_id" key is added with value = self.service_provider.id
+        private (single leading underscore) variables will have the leading underscore removed in this function
 
         Returns:
             dict: copy of self.__dict__ with changes described above
@@ -69,18 +112,27 @@ class SimpleServiceBillDataBase(DictInsertable, ABC):
         d.pop("service_provider", None)
         d["real_estate_id"] = self.real_estate.id
         d["service_provider_id"] = self.service_provider.id
+        d["start_date"] = d.pop("_start_date")
+        d["end_date"] = d.pop("_end_date")
+        d["paid_date"] = d.pop("_paid_date")
         return d
 
-    def to_pd_df(self):
-        """ Convert instance attributes to pandas dataframe
+    def to_pd_df(self, deprivatize=True, **kwargs):
+        """ see superclass docstring
 
         Returns:
-            pd.DataFrame: columns are attributes of this with self.real_estate and self.service_provider attributes
+            pd.DataFrame: with the following changes:
+                self.real_estate.to_pd_df() with 'id' renamed to 'real_estate_id' and real_estate column dropped
+                self.service_provider.to_pd_df() with 'id' renamed to 'service_provider_id' and service_provider column
+                    dropped
         """
         re_df = self.real_estate.to_pd_df().rename(columns={"id": "real_estate_id"})
         sp_df = self.service_provider.to_pd_df().rename(columns={"id": "service_provider_id"})
-        df = pd.concat([re_df, sp_df,
-                    pd.DataFrame(self.__dict__, index=[0]).drop(columns=["real_estate", "service_provider"])], axis=1)
+        other_df = pd.DataFrame(self.__dict__, index=[0]).drop(columns=["real_estate", "service_provider"])
+        df = pd.concat([re_df, sp_df, other_df], axis=1)
+        if deprivatize:
+            df = df.rename(columns={"_start_date": "start_date", "_end_date": "end_date", "_paid_date": "paid_date"})
+
         return df
 
     @staticmethod
