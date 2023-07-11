@@ -42,8 +42,8 @@ class DepreciationModel(SimpleServiceModelBase):
             bill (DepreciationBillData): save this bill to file
         """
         def to_fn(ver):
-            fn = bill.real_estate.address.short_name() + "_" + bill.real_property_value.item + "_" \
-                 + str(bill.real_property_value.purchase_date) + "_" + str(bill.start_date) + "_" \
+            fn = bill.real_estate.address.short_name() + "_" + bill.real_property_values.item + "_" \
+                 + str(bill.real_property_values.purchase_date) + "_" + str(bill.start_date) + "_" \
                  + str(bill.end_date) + "_" + str(ver) + ".csv"
             return fn, pathlib.Path(__file__).parent.parent.parent.parent / (os.getenv("FI_DEPRECIATION_DIR") + fn)
 
@@ -97,11 +97,11 @@ class DepreciationModel(SimpleServiceModelBase):
         item = df.loc[0, "item"]
         purchase_date = datetime.datetime.strptime(df.loc[0, "purchase_date"], "%Y-%m-%d").date()
         # list will have 0 or 1 item
-        real_property_value = self.read_real_property_value_by_reipd(real_estate, item, purchase_date)
-        if len(real_property_value) == 0:
+        real_property_values = self.read_real_property_value_by_reipd(real_estate, item, purchase_date)
+        if len(real_property_values) == 0:
             raise ValueError("Depreciation item '" + str(item) + "' with purchase date " + str(purchase_date) +
                              " not found at real estate address: " + str(real_estate.address.value))
-        real_property_value = real_property_value[0]
+        real_property_values = real_property_values[0]
         start_date = datetime.datetime.strptime(df.loc[0, "start_date"], "%Y-%m-%d").date()
         end_date = datetime.datetime.strptime(df.loc[0, "end_date"], "%Y-%m-%d").date()
         period_usage_pct = df.loc[0, "period_usage_pct"]
@@ -111,7 +111,7 @@ class DepreciationModel(SimpleServiceModelBase):
             else datetime.datetime.strptime(df.loc[0, "paid_date"], "%Y-%m-%d").date()
         notes = None if pd.isnull(df.loc[0, "notes"]) else df.loc[0, "notes"]
 
-        dbd = DepreciationBillData(real_estate, service_provider, real_property_value, start_date, end_date,
+        dbd = DepreciationBillData(real_estate, service_provider, real_property_values, start_date, end_date,
                                    period_usage_pct, total_cost, paid_date=paid_date, notes=notes)
         self.asb_dict.insert_bills(dbd)
 

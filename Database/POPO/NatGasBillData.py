@@ -97,3 +97,50 @@ class NatGasBillData(ComplexServiceBillDataBase):
         self.oca_total_cost = oca_total_cost
 
         self.db_dict_update(db_dict)
+
+    def __str__(self):
+        """ __str__ override
+
+        Format:
+            super().__str__()
+            Total Therms: self.total_therms, Saved Therms: self.saved_therms, Bank KWH: self.bank_kwh
+            Delivery Services: Total Cost: self.ds_total_cost
+              Basic: Therms: self.bsc_therms, Cost: self.bsc_cost
+              Next: Therms: self.next_therms, Rate: self.next_rate/therm, Cost: self.next_cost
+              Over: Therms: self.over_therms, Rate: self.over_rate/therm, Cost: self.over_cost
+              Delivery Rate Adjustment: Rate: self.dra_rate/therm, Cost: self.dra_cost
+              System Benefits Charge: Rate: self.sbc_rate/therm, Cost: self.sbc_cost
+              Transportation Adjustment Charge: Rate: self.tac_rate/therm, Cost: self.tac_cost
+              Billing Charge: Cost: self.bc_cost
+              NY State and Local Surcharges: Rate: self.ds_nysls_rate, Cost: self.ds_nysls_cost
+              NY State Sales Tax: Rate: self.ds_nysst_rate, Cost: self.ds_nysst_cost
+            Supply Services: Total Cost: self.ss_total_cost
+              Gas Supply: Rate: self.gs_rate/therm, Cost: self.gs_cost
+              NY State and Local Surcharges: Rate: self.ss_nysls_rate, Cost: self.ss_nysls_cost
+              NY State Sales Tax: Rate: self.ss_nysst_rate, Cost: self.ss_nysst_cost
+            Other Charges/Adjustments: Total Cost: self.oca_total_cost
+                Paperless Billing Credit: Cost: self.pbc_cost
+
+        Returns:
+            str: as described by Format
+        """
+        return super().__str__() + \
+            "\nTotal Therms: " + str(self.total_therms) + ", Saved Therms: " + str(self.saved_therms) + \
+            "\nDelivery Services: Total Cost: " + str(self.ds_total_cost) + \
+            "\n  Basic: Therms: " + str(self.bsc_therms) + ", Cost: " + str(self.bsc_cost) + \
+            "\n  Next: Therms: " + str(self.next_therms) + ", Rate: " + str(self.next_rate) + "/therm, Cost: " + \
+                str(self.next_cost) + \
+            "\n  Over: Therms: " + str(self.over_therms) + ", Rate: " + str(self.over_rate) + "/therm, Cost: " + \
+                str(self.over_cost) + \
+            "\n  Delivery Rate Adjustment: Rate: " + str(self.dra_rate) + "/therm, Cost: " + str(self.dra_cost) + \
+            "\n  System Benefits Charge: Rate: " + str(self.sbc_rate) + "/kwh, Cost: " + str(self.sbc_cost) + \
+            "\n  Transportation Adjustment Charge: Rate: " + str(self.tac_rate) + "/therm, Cost: "+str(self.tac_cost)+\
+            "\n  Billing Charge: Cost: " + str(self.bc_cost) + \
+            "\n  NY State and Local Surcharges: Rate: " + str(self.ds_nysls_rate) + ", Cost: "+str(self.ds_nysls_cost)+\
+            "\n  NY State Sales Tax: Rate: " + str(self.ds_nysst_rate) + ", Cost: " + str(self.ds_nysst_cost) + \
+            "\nSupply Services: Total Cost: " + str(self.ss_total_cost) + \
+            "\n  Gas Supply: Rate: " + str(self.gs_rate) + "/therm, Cost: " + str(self.gs_cost) + \
+            "\n  NY State and Local Surcharges: Rate: " + str(self.ss_nysls_rate) + ", Cost: "+str(self.ss_nysls_cost)+\
+            "\n  NY State Sales Tax: Rate: " + str(self.ss_nysst_rate) + ", Cost: " + str(self.ss_nysst_cost) + \
+            "\nOther Charges/Adjustments: Total Cost: " + str(self.oca_total_cost) + \
+            "\n  Paperless Billing Credit: Cost: " + str(self.pbc_cost)

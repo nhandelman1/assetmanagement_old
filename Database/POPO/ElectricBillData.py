@@ -52,7 +52,7 @@ class ElectricBillData(ComplexServiceBillDataBase):
             nysa_cost (Optional[Decimal]): new york state assessment cost. Default None
             rbp_rate (Optional[Decimal]): revenue based pilots rate. Default None
             rbp_cost (Optional[Decimal]): revenue based pilots cost. Default None
-            spta_rate (Optional[Decimal]): revenue decoupling adjustment rate. Default None
+            spta_rate (Optional[Decimal]): suffolk property tax adjustment rate. Default None
             spta_cost (Optional[Decimal]): suffolk property tax adjustment cost. Default None
             st_rate (Optional[Decimal]): sales tax rate. Default None
             st_cost (Optional[Decimal]): sales tax cost. Default None
@@ -98,3 +98,51 @@ class ElectricBillData(ComplexServiceBillDataBase):
         self.toc_total_cost = toc_total_cost
 
         self.db_dict_update(db_dict)
+
+    def __str__(self):
+        """ __str__ override
+
+        Format:
+            super().__str__()
+            Total KWH: self.total_kwh, Electric Heater KWH: self.eh_kwh, Bank KWH: self.bank_kwh
+            Delivery & System Charges: Total Cost: self.dsc_total_cost
+              Basic: Rate: self.bs_rate/day, Cost: self.bs_cost
+              First: KWH: self.first_kwh, Rate: self.first_rate/kwh, Cost: self.first_cost
+              Next: KWH: self.next_kwh, Rate: self.next_rate/kwh, Cost: self.next_cost
+              Customer Benefit Contribution: Rate: self.cbc_rate/day, Cost: self.cbc_cost
+              Merchant Function Charge: Rate: self.mfc_rate/kwh, Cost: self.mfc_cost
+            Power Supply Charges: Total Cost: self.psc_total_cost
+              Power Supply: Rate: self.psc_rate/kwh, Cost: self.psc_cost
+            Taxes & Other Charges: Total Cost: self.toc_total_cost
+              Distributed Energy Resources: Rate: self.der_cost/kwh, Cost: self.der_cost
+              Delivery Service Adjustment: Rate: self.dsa_rate, Cost: self.dsa_cost
+              Revenue Decoupling Adjustment: Rate: self.rda_rate, Cost: self.rda_cost
+              New York State Assessment: Rate: self.nysa_rate, Cost: self.nysa_cost
+              Revenue Based Pilots: Rate: self.rbp_rate, Cost: self.rbp_cost
+              Suffolk Property Tax Adjustment: Rate: self.spta_rate, Cost: self.spta_cost
+              Sales Tax: Rate: self.st_rate, Cost: self.st_cost
+
+        Returns:
+            str: as described by Format
+        """
+        return super().__str__() + \
+            "\nTotal KWH: " + str(self.total_kwh) + ", Electric Heater KWH: " + str(self.eh_kwh) + ", Bank KWH: " + \
+            str(self.bank_kwh) + \
+            "\nDelivery & System Charges: Total Cost: " + str(self.dsc_total_cost) + \
+            "\n  Basic: Rate: " + str(self.bs_rate) + "/day, Cost: " + str(self.bs_cost) + \
+            "\n  First: KWH: " + str(self.first_kwh) + ", Rate: " + str(self.first_rate) + "/kwh, Cost: " + \
+                str(self.first_cost) + \
+            "\n  Next: KWH: " + str(self.next_kwh) + ", Rate: " + str(self.next_rate) + "/kwh, Cost: " + \
+                str( self.next_cost) + \
+            "\n  Customer Benefit Contribution: Rate: " + str(self.cbc_rate) + "/day, Cost: " + str(self.cbc_cost) + \
+            "\n  Merchant Function Charge: Rate: " + str(self.mfc_rate) + "/kwh, Cost: " + str(self.mfc_cost) + \
+            "\nPower Supply Charges: Total Cost: " + str(self.psc_total_cost) + \
+            "\n  Power Supply: Rate: " + str(self.psc_rate) + "/kwh, Cost: " + str(self.psc_cost) + \
+            "\nTaxes & Other Charges: Total Cost: " + str(self.toc_total_cost) + \
+            "\n  Distributed Energy Resources: Rate: " + str(self.der_rate) + "/kwh, Cost: " + str(self.der_cost) + \
+            "\n  Delivery Service Adjustment: Rate: " + str(self.dsa_rate) + ", Cost: " + str(self.dsa_cost) + \
+            "\n  Revenue Decoupling Adjustment: Rate: " + str(self.rda_rate) + ", Cost: " + str(self.rda_cost) + \
+            "\n  New York State Assessment: Rate: " + str(self.nysa_rate) + ", Cost: " + str(self.nysa_cost) + \
+            "\n  Revenue Based Pilots: Rate: " + str(self.rbp_rate) + ", Cost: " + str(self.rbp_cost) + \
+            "\n  Suffolk Property Tax Adjustment: Rate: " + str(self.spta_rate) + ", Cost: " + str(self.spta_cost) + \
+            "\n  Sales Tax: Rate: " + str(self.st_rate) + ", Cost: " + str(self.st_cost)

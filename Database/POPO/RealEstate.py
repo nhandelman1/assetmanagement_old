@@ -79,6 +79,14 @@ class RealEstate(DataFrameable):
             if isinstance(self.address, str):
                 self.address = Address(self.address)
 
+    def __str__(self):
+        """ __str__ override
+
+        Returns:
+            str: self.address.value
+        """
+        return str(self.address.value)
+
     def to_pd_df(self, deprivatize=True, **kwargs):
         """ see superclass docstring
 

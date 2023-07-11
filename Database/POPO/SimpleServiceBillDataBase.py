@@ -45,6 +45,23 @@ class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
         self.paid_date = paid_date
         self.notes = notes
 
+    def __str__(self):
+        """ __str__ override
+
+        Format:
+            str(self.real_estate)
+            str(self.service_provider)
+            Start Date: str(self.start_date), End Date: str(self.end_date)
+            Total Cost: str(self.total_cost), Paid Date: str(self.paid_date)
+            Notes: str(self.notes)
+
+        Returns:
+            str: as described by Format
+        """
+        return str(self.real_estate) + "\n" + str(self.service_provider) + "\nStart Date: " + str(self.start_date) + \
+            ", EndDate: " + str(self.end_date) + "\nTotal Cost: " + str(self.total_cost) + ", Paid Date: " + \
+            str(self.paid_date) + "\nNotes: " + str(self.notes)
+
     @property
     def start_date(self):
         return self._start_date

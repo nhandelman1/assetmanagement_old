@@ -40,7 +40,6 @@ class SolarBillData(SimpleServiceBillDataBase):
                          notes=notes)
         self.solar_kwh = solar_kwh
         self.home_kwh = home_kwh
-        self.total_cost = total_cost
         self.actual_costs = actual_costs
         self.oc_bom_basis = oc_bom_basis
         self.oc_pnl_pct = oc_pnl_pct
@@ -51,6 +50,20 @@ class SolarBillData(SimpleServiceBillDataBase):
 
         if calc_variables:
             self.calc_variables()
+
+    def __str__(self):
+        """ __str__ override
+
+        Format:
+            Actual Bill: str(self.is_actual), super().__str__()
+
+        Returns:
+            str: as described by Format
+        """
+        return super().__str__() + "\nSolar KWH Production: " + str(self.solar_kwh) + ", Home KWH Usage: " + \
+                str(self.home_kwh) + "\nActual Costs: " + str(self.actual_costs) + "\nOpportunity Cost: BOM Basis: " + \
+            str(self.oc_bom_basis) + ", PNL Pct: " + str(self.oc_pnl_pct) + "%, PNL: " + str(self.oc_pnl) + \
+            ", EOM Basis: " + str(self.oc_eom_basis)
 
     def calc_variables(self):
         """ Calculate instance variables that can be calculated from other instance variables

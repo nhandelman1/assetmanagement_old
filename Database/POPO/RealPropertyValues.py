@@ -55,9 +55,9 @@ class RealPropertyValues(DataFrameable):
                 self.dep_class = DepClass(self.dep_class)
 
     def __str__(self):
-        return self.real_estate.address.value + ", " + self.item + ", depreciation class: " + self.dep_class.value \
-            + ", purchase date: " + str(self.purchase_date) + ", disposal date: " + str(self.disposal_date) \
-            + ", cost basis: " + str(self.cost_basis) + ", notes: " + str(self.notes)
+        return self.real_estate.address.value + "\n" + self.item + ", Depreciation Class: " + self.dep_class.value \
+            + "\nPurchase Date: " + str(self.purchase_date) + ", Disposal Date: " + str(self.disposal_date) \
+            + "\nCost Basis: " + str(self.cost_basis) + "\nNotes: " + str(self.notes)
 
     def to_pd_df(self, deprivatize=True, **kwargs):
         """ see superclass docstring

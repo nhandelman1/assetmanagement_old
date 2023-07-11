@@ -52,6 +52,43 @@ class ElectricData(UtilityDataBase):
         self.db_dict_update(db_dict)
         self.str_dict_update(str_dict)
 
+    def __str__(self):
+        """ __str__ override
+
+        Format:
+            super().__str__()
+            Delivery & System Charges:
+              First: KWH: self.first_kwh, Rate: self.first_rate/kwh
+              Next: Rate: self.next_rate/kwh
+              Merchant Function Charge: Rate: self.mfc_rate/kwh
+            Power Supply Charges:
+              Power Supply: Rate: self.psc_rate/kwh
+            Taxes & Other Charges: Total Cost: self.toc_total_cost
+              Distributed Energy Resources: Rate: self.der_cost/kwh
+              Delivery Service Adjustment: Rate: self.dsa_rate
+              Revenue Decoupling Adjustment: Rate: self.rda_rate
+              New York State Assessment: Rate: self.nysa_rate
+              Revenue Based Pilots: Rate: self.rbp_rate
+              Suffolk Property Tax Adjustment: Rate: self.spta_rate
+
+        Returns:
+            str: as described by Format
+        """
+        return super().__str__() + \
+            "\nDelivery & System Charges:" + \
+            "\n  First: KWH: " + str(self.first_kwh) + ", Rate: " + str(self.first_rate) + "/kwh" + \
+            "\n  Next: Rate: " + str(self.next_rate) + "/kwh" + \
+            "\n  Merchant Function Charge: Rate: " + str(self.mfc_rate) + "/kwh" + \
+            "\nPower Supply Charges: " + \
+            "\n  Power Supply: Rate: " + str(self.psc_rate) + "/kwh" + \
+            "\nTaxes & Other Charges:" + \
+            "\n  Distributed Energy Resources: Rate: " + str(self.der_rate) + "/kwh" + \
+            "\n  Delivery Service Adjustment: Rate: " + str(self.dsa_rate) + \
+            "\n  Revenue Decoupling Adjustment: Rate: " + str(self.rda_rate) + \
+            "\n  New York State Assessment: Rate: " + str(self.nysa_rate) + \
+            "\n  Revenue Based Pilots: Rate: " + str(self.rbp_rate) + \
+            "\n  Suffolk Property Tax Adjustment: Rate: " + str(self.spta_rate)
+
     def str_dict_update(self, str_dict):
         """ Update instance variables using string (or otherwise specified below) values in str_dict
 

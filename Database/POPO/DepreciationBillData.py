@@ -1,9 +1,12 @@
 import datetime
+import textwrap
+
 import pandas as pd
 from decimal import Decimal
 from typing import Optional
 from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
 from Database.POPO.RealPropertyValues import RealPropertyValues
+from Util.PythonUtil import textwrap_lines
 
 
 class DepreciationBillData(SimpleServiceBillDataBase):
@@ -12,7 +15,7 @@ class DepreciationBillData(SimpleServiceBillDataBase):
     Attributes:
         see init docstring for attributes (db_dict is not kept as an attribute)
     """
-    def __init__(self, real_estate, service_provider, real_property_value, start_date, end_date, period_usage_pct,
+    def __init__(self, real_estate, service_provider, real_property_values, start_date, end_date, period_usage_pct,
                  total_cost, paid_date=None, notes=None, db_dict=None):
         """ init function
 
@@ -20,7 +23,7 @@ class DepreciationBillData(SimpleServiceBillDataBase):
             see superclass docstring
             start_date (datetime.date): must be first day of the year (i.e. YYYY-01-01). also enforced by database
             end_date (datetime.date): must be last day of the year (i.e. YYYY-12-31). also enforced by database
-            real_property_value (RealPropertyValues): depreciation item associated with this bill
+            real_property_values (RealPropertyValues): depreciation item associated with this bill
             period_usage_pct (Decimal): should be percent value between 000.00 and 100.00 (inclusive).
                 also enforced by database. percent of period item used for business purposes (active or idle). period
                 might not be a full year due to purchase date or disposal date probably aren't on Jan 1st
@@ -29,10 +32,24 @@ class DepreciationBillData(SimpleServiceBillDataBase):
         """
         super().__init__(real_estate, service_provider, start_date, end_date, total_cost, paid_date=paid_date,
                          notes=notes)
-        self.real_property_value = real_property_value
+        self.real_property_values = real_property_values
         self.period_usage_pct = period_usage_pct
 
         self.db_dict_update(db_dict)
+
+    def __str__(self):
+        """ __str__ override
+
+        Format:
+            super().__str__()
+            Period Usage Pct: self.period_usage_pct %
+            Real Property Values: str(self.real_property_values)
+
+        Returns:
+            str: as described by Format
+        """
+        return super().__str__() + "\nPeriod Usage Pct: " + str(self.period_usage_pct) + "%\nReal Property Values:\n" \
+            + textwrap_lines(str(self.real_property_values))
 
     @SimpleServiceBillDataBase.start_date.setter
     def start_date(self, start_date):
@@ -103,16 +120,16 @@ class DepreciationBillData(SimpleServiceBillDataBase):
         """ Convert class attributes to MySQL insertable dict
 
         see overridden function docstring
-        "real_property_value" attribute is not included in returned dict
-        "real_property_values_id" key is added with value = self.real_property_value.id
+        "real_property_values" attribute is not included in returned dict
+        "real_property_values_id" key is added with value = self.real_property_values.id
         private (single leading underscore) variables will have the leading underscore removed in this function
 
         Returns:
             dict: copy of self.__dict__ with changes described above
         """
         d = super().to_insert_dict()
-        d.pop("real_property_value", None)
-        d["real_property_values_id"] = self.real_property_value.id
+        d.pop("real_property_values", None)
+        d["real_property_values_id"] = self.real_property_values.id
         d["period_usage_pct"] = d.pop("_period_usage_pct")
         return d
 
@@ -121,19 +138,19 @@ class DepreciationBillData(SimpleServiceBillDataBase):
 
         Args:
             deprivatize (Optional[boolean]): see superclass docstring
-            **kwargs: rpv_prepend (boolean): True to prepend 'rpv_' to self.real_property_value.real_estate instance
-                attributes and self.real_property_value.notes attribute. If this is not prepended, there will be columns
-                with the same names since self also has real_estate and notes attribute
+            **kwargs: rpv_prepend (boolean): True to prepend 'rpv_' to self.real_property_values.real_estate instance
+                attributes and self.real_property_values.notes attribute. If this is not prepended, there will be
+                columns with the same names since self also has real_estate and notes attribute
 
         Returns:
             pd.DataFrame: see superclass docstring and **kwargs in this docstring
-                self.real_property_value.to_pd_df() with 'id' renamed to 'real_property_value_id' and
-                    real_property_value column dropped
+                self.real_property_values.to_pd_df() with 'id' renamed to 'real_property_value_id' and
+                    real_property_values column dropped
         """
         do_rpv_prepend = kwargs.get("rpv_prepend", False)
 
         df = super().to_pd_df(deprivatize=deprivatize, **kwargs)
-        rpv_df = self.real_property_value.to_pd_df()
+        rpv_df = self.real_property_values.to_pd_df()
 
         rpv_df = rpv_df.rename(columns={"id": "real_property_value_id"})
         if do_rpv_prepend:
@@ -141,7 +158,7 @@ class DepreciationBillData(SimpleServiceBillDataBase):
                 ["real_estate_id", "address", "street_num", "street_name", "city", "state", "zip_code", "apt","notes"]})
 
         df = pd.concat([df, rpv_df], axis=1)
-        df = df.drop(columns=["real_property_value"])
+        df = df.drop(columns=["real_property_values"])
         if deprivatize:
             df = df.rename(columns={"_period_usage_pct": "period_usage_pct"})
 

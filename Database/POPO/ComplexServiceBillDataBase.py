@@ -29,6 +29,17 @@ class ComplexServiceBillDataBase(SimpleServiceBillDataBase):
 
         self.is_actual = is_actual
 
+    def __str__(self):
+        """ __str__ override
+
+        Format:
+            Actual Bill: str(self.is_actual), super().__str__()
+
+        Returns:
+            str: as described by Format
+        """
+        return "Actual Bill: " + str(self.is_actual) + ", " + super().__str__()
+
     def db_dict_update(self, db_dict):
         """ Use db_dict to update instance variables
 

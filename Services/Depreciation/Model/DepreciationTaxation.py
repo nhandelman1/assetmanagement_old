@@ -202,14 +202,14 @@ class DepreciationTaxation:
         """ init function """
         pass
 
-    def calculate_accumulated_depreciation(self, real_property_value, tax_year):
+    def calculate_accumulated_depreciation(self, real_property_values, tax_year):
         """ Calculate accumulated depreciation for depreciation item up to the specified tax year
 
         Gather depreciation bills associated with depreciation item for years before tax_year. Sum total depreciation
         costs from these bills.
 
         Args:
-            real_property_value (RealPropertyValues): depreciation item
+            real_property_values (RealPropertyValues): depreciation item
             tax_year (int): calculate accumulated depreciation up to (not including) this tax year. must be a year
                 before the current year
 
@@ -223,20 +223,20 @@ class DepreciationTaxation:
             raise ValueError(str(tax_year) + " is not a previous year. Must be a previous year.")
 
         with MySQLAM() as mam:
-            bills = mam.depreciation_bill_data_read(wheres=[["real_property_values_id", "=", real_property_value.id],
+            bills = mam.depreciation_bill_data_read(wheres=[["real_property_values_id", "=", real_property_values.id],
                                                             ["paid_date", "<", datetime.date(tax_year, 1, 1)]])
 
         # empty bills list will return int 0 so need to cast to Decimal
         return Decimal(sum(b.total_cost for b in bills))
 
-    def calculate_depreciation_for_year(self, real_property_value, tax_year):
+    def calculate_depreciation_for_year(self, real_property_values, tax_year):
         """ Calculate depreciation for depreciation item for the specified tax year assuming full period usage
 
         "full period" used here instead of "full year" to indicate that first, last and disposal years may be partial
         years.
 
         Args:
-            real_property_value (RealPropertyValues): depreciation item
+            real_property_values (RealPropertyValues): depreciation item
             tax_year (int): calculate depreciation for this tax year. must be a year before the current year
 
         Returns:
@@ -250,15 +250,15 @@ class DepreciationTaxation:
         if tax_year >= datetime.date.today().year:
             raise ValueError(str(tax_year) + " is not a previous year. Must be a previous year.")
 
-        dep_type = DepreciationType.from_dep_class(real_property_value.dep_class)
-        accum_dep = self.calculate_accumulated_depreciation(real_property_value, tax_year)
-        remain_dep = real_property_value.cost_basis - accum_dep
+        dep_type = DepreciationType.from_dep_class(real_property_values.dep_class)
+        accum_dep = self.calculate_accumulated_depreciation(real_property_values, tax_year)
+        remain_dep = real_property_values.cost_basis - accum_dep
 
         # this algorithm accounts for non depreciable property, property that has been fully depreciated
         # and property that has been disposed
-        year_dep_rat = dep_type.depreciation_ratio_for_tax_year(real_property_value.purchase_date,
-                                                                real_property_value.disposal_date, tax_year)
-        max_year_dep = real_property_value.cost_basis * year_dep_rat
+        year_dep_rat = dep_type.depreciation_ratio_for_tax_year(real_property_values.purchase_date,
+                                                                real_property_values.disposal_date, tax_year)
+        max_year_dep = real_property_values.cost_basis * year_dep_rat
         # negative depreciation doesn't exist so this check ensures year_dep is at minimum 0. should only happen
         # if there is a slight numerical issue
         year_dep = round(max(Decimal(0), min(remain_dep, max_year_dep)), 0)

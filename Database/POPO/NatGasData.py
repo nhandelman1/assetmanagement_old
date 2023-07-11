@@ -65,6 +65,52 @@ class NatGasData(UtilityDataBase):
         self.db_dict_update(db_dict)
         self.str_dict_update(str_dict)
 
+    def __str__(self):
+        """ __str__ override
+
+        Format:
+            super().__str__()
+            Delivery Services:
+              Basic: Therms: self.bsc_therms, Rate: self.bsc_rate
+              Next: Therms: self.next_therms, Rate: self.next_rate/therm
+              Over: Rate: self.over_rate/therm
+              Delivery Rate Adjustment: Rate: self.dra_rate/therm
+              Weather Normalization Adjustment: Low Rate: self.wna_low_rate/therm, High Rate: self.wna_high_rate/therm
+              System Benefits Charge: Rate: self.sbc_rate/therm
+              Transportation Adjustment Charge: Rate: self.tac_rate/therm
+              Billing Charge: Rate: self.bc_rate/bill
+              NY State and Local Surcharges: Rate: self.ds_nysls_rate
+              NY State Sales Tax: Rate: self.ds_nysst_rate
+            Supply Services:
+              Gas Supply: Rate: self.gs_rate/therm
+              NY State and Local Surcharges: Rate: self.ss_nysls_rate
+              NY State Sales Tax: Rate: self.ss_nysst_rate
+            Other Charges/Adjustments:
+              Paperless Billing Credit: Cost: self.pbc_rate/bill
+
+        Returns:
+            str: as described by Format
+        """
+        return super().__str__() + \
+            "\nDelivery Services:" + \
+            "\n  Basic: Therms: " + str(self.bsc_therms) + ", Rate: " + str(self.bsc_rate) + \
+            "\n  Next: Therms: " + str(self.next_therms) + ", Rate: " + str(self.next_rate) + "/therm" \
+            "\n  Over: Rate: " + str(self.over_rate) + "/therm" + \
+            "\n  Delivery Rate Adjustment: Rate: " + str(self.dra_rate) + "/therm" + \
+            "\n  Weather Normalization Adjustment: Low Rate: " + str(self.wna_low_rate) + "/therm, High Rate: " + \
+                str(self.wna_high_rate) + "/therm" + \
+            "\n  System Benefits Charge: Rate: " + str(self.sbc_rate) + "/therm" + \
+            "\n  Transportation Adjustment Charge: Rate: " + str(self.tac_rate) + "/therm" + \
+            "\n  Billing Charge: Rate: " + str(self.bc_rate) + "/bill" + \
+            "\n  NY State and Local Surcharges: Rate: " + str(self.ds_nysls_rate) + \
+            "\n  NY State Sales Tax: Rate: " + str(self.ds_nysst_rate) + \
+            "\nSupply Services: " + \
+            "\n  Gas Supply: Rate: " + str(self.gs_rate) + "/therm" + \
+            "\n  NY State and Local Surcharges: Rate: " + str(self.ss_nysls_rate) + \
+            "\n  NY State Sales Tax: Rate: " + str(self.ss_nysst_rate) + \
+            "\nOther Charges/Adjustments:" + \
+            "\n  Paperless Billing Credit: Rate: " + str(self.pbc_rate) + "/bill"
+
     def str_dict_update(self, str_dict):
         """ Update instance variables using string (or otherwise specified below) values in str_dict
 

@@ -6,7 +6,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 select * from real_estate;
 select * from service_provider;
-select * from real_property_value;
+select * from real_property_values;
 select * from mysunpower_hourly_data order by dt desc;
 select * from electric_bill_data;
 select * from electric_data;

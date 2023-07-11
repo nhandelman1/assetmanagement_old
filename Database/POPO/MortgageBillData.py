@@ -32,3 +32,17 @@ class MortgageBillData(SimpleServiceBillDataBase):
         self.other_pmt = other_pmt
 
         self.db_dict_update(db_dict)
+
+    def __str__(self):
+        """ __str__ override
+
+        Format:
+            super().__str__()
+
+
+        Returns:
+            str: as described by Format
+        """
+        return super().__str__() + "\nBalances (before payments applied): Principal: " + str(self.outs_prin) + \
+            ", Escrow: " + str(self.esc_bal) + "\nPayments: Principal: " + str(self.prin_pmt) + ", Interest: " + \
+            str(self.int_pmt) + ", Escrow: " + str(self.esc_pmt) + ", Other: " + str(self.other_pmt)

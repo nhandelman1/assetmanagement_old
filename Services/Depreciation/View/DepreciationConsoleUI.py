@@ -39,7 +39,7 @@ class DepreciationConsoleUI(SimpleConsoleUIBase, DepreciationViewBase):
         print("\nInput period usages for depreciation items. Note that for a partial year, 100% usage means the "
               "property was used for the entirety of the partial year it was in service.")
         for bill in bill_list:
-            rpv_str = "\n**** Real Property Value Data ****\n" + textwrap.fill(str(bill.real_property_value), width=150)
+            rpv_str = "\n**** Real Property Value Data ****\n" + textwrap.fill(str(bill.real_property_values),width=150)
             bill_str = "\n**** Bill Data ****\n" + \
                        textwrap.fill("start date: " + str(bill.start_date) + ", end date: " + str(bill.end_date) +
                                      ", total cost: " + str(bill.total_cost) + ", paid date: " + str(bill.paid_date) +

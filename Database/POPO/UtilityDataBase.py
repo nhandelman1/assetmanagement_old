@@ -29,6 +29,19 @@ class UtilityDataBase(DictInsertable, ABC):
         self.month_date = month_date
         self.month_year = month_year
 
+    def __str__(self):
+        """ __str__ override
+
+        Format:
+            str(self.real_estate)
+            str(self.service_provider)
+            str(self.month_year)
+
+        Returns:
+            str: as described by Format
+        """
+        return str(self.real_estate) + "\n" + str(self.service_provider) + "\n" + str(self.month_year)
+
     @abstractmethod
     def str_dict_update(self, str_dict):
         """ Update instance variables using string (or subclass specific) values in str_dict

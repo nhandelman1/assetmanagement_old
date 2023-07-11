@@ -70,6 +70,14 @@ class ServiceProvider(DataFrameable):
             if isinstance(self.tax_category, str):
                 self.tax_category = TaxCategory(self.tax_category)
 
+    def __str__(self):
+        """ __str__ override
+
+        Returns:
+            str: Provider: self.provider.value, Tax Category: self.tax_category.value
+        """
+        return "Provider: " + str(self.provider.value) + ", Tax Category: " + str(self.tax_category.value)
+
     def to_pd_df(self, deprivative=True, **kwargs):
         """ see superclass docstring
 
