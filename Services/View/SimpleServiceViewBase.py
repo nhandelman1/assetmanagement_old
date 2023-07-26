@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from decimal import Decimal
 from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
 
 
@@ -19,11 +20,12 @@ class SimpleServiceViewBase(ABC):
         raise NotImplementedError("input_read_new_bill() not implemented by subclass")
 
     @abstractmethod
-    def input_select_real_estate(self, re_dict):
+    def input_select_real_estate(self, re_dict, pre_str=""):
         """ ask for user to select real estate from re_dict
 
         Args:
             re_dict (dict): dict of int real estate ids (keys) to RealEstate (values)
+            pre_str(str): prepend this str to generic select real estate message determined by subclass. Default ""
 
         Returns:
             int: real estate id
@@ -31,11 +33,12 @@ class SimpleServiceViewBase(ABC):
         raise NotImplementedError("input_select_real_estate() not implemented by subclass")
 
     @abstractmethod
-    def input_select_service_provider(self, sp_dict):
+    def input_select_service_provider(self, sp_dict, pre_str=""):
         """ ask for user to select provider from sp_dict
 
         Args:
             sp_dict (dict): dict of int service provider ids (keys) to ServiceProvider (values)
+            pre_str(str): prepend this str to generic select service provider message determined by subclass. Default ""
 
         Returns:
             int: service provider id
@@ -67,3 +70,59 @@ class SimpleServiceViewBase(ABC):
             list[SimpleServiceBillDataBase]: list of bills from unpaid_bill_list where paid date is set (not skipped)
         """
         raise NotImplementedError("input_paid_dates() not implemented by subclass")
+
+    @abstractmethod
+    def input_paid_year(self, pre_str=""):
+        """ ask for paid date year in format YYYY
+
+        Args:
+            pre_str(str): prepend this str to generic input paid year message determined by subclass. Default ""
+
+        Returns:
+            int: year
+        """
+        raise NotImplementedError("input_paid_year() not implemented by subclass")
+
+    @abstractmethod
+    def display_bill(self, bill):
+        """ display the bill
+
+        Display format determined by subclass but will always display at minimum some representation of all instance
+        attributes of the bill.
+
+        Args:
+            bill (SimpleServiceBillDataBase):
+        """
+        raise NotImplementedError("display_bill() not implemented by subclass")
+
+    @abstractmethod
+    def display_bills(self, bill_list):
+        """ display the bills
+
+        Each bill will be displayed as determined by self.display_bill(). Any display before or after each bill is
+        determined in this function by subclass.
+
+        Args:
+            bill_list (list[SimpleServiceBillDataBase]):
+        """
+        raise NotImplementedError("display_bills() not implemented by subclass")
+
+    @abstractmethod
+    def input_partial_bill_portion(self, bill_list):
+        """ ask for portion (as a ratio) of existing bill(s) that the new bill(s) will be with cancel option
+
+        Display all bills in bill_list.
+        User asked to enter a ratio 0-1 (inclusive) that will apply to all bills, 'skip' to enter ratio per bill or
+        'cancel' to not create any new bills.
+        If 'skip', user asked to enter a ratio 0-1 (inclusive) per bill or 'cancel' to not create a new bill.
+        No bill in bill_list will be altered
+
+        Args:
+            bill_list (list[SimpleServiceBillDataBase]): bills being asked about
+
+        Returns:
+            list[tuple[SimpleServiceBillDataBase, Decimal]]: sub tuples are 2-tuples where the first element is the
+                bill and the second element is the ratio (0-1 inclusive) of the bill that the new bill will be or
+                Decimal(NaN) to not create a copy
+        """
+        raise NotImplementedError("input_partial_bill_portion() not implemented by subclass")

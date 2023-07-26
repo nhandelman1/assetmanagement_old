@@ -133,7 +133,7 @@ class ElectricBillData(ComplexServiceBillDataBase):
             "\n  First: KWH: " + str(self.first_kwh) + ", Rate: " + str(self.first_rate) + "/kwh, Cost: " + \
                 str(self.first_cost) + \
             "\n  Next: KWH: " + str(self.next_kwh) + ", Rate: " + str(self.next_rate) + "/kwh, Cost: " + \
-                str( self.next_cost) + \
+                str(self.next_cost) + \
             "\n  Customer Benefit Contribution: Rate: " + str(self.cbc_rate) + "/day, Cost: " + str(self.cbc_cost) + \
             "\n  Merchant Function Charge: Rate: " + str(self.mfc_rate) + "/kwh, Cost: " + str(self.mfc_cost) + \
             "\nPower Supply Charges: Total Cost: " + str(self.psc_total_cost) + \
@@ -146,3 +146,46 @@ class ElectricBillData(ComplexServiceBillDataBase):
             "\n  Revenue Based Pilots: Rate: " + str(self.rbp_rate) + ", Cost: " + str(self.rbp_cost) + \
             "\n  Suffolk Property Tax Adjustment: Rate: " + str(self.spta_rate) + ", Cost: " + str(self.spta_cost) + \
             "\n  Sales Tax: Rate: " + str(self.st_rate) + ", Cost: " + str(self.st_cost)
+
+    def copy(self, cost_ratio=None, real_estate=None, **kwargs):
+        """ see superclass docstring
+
+        Ratio applied to KWH, cost and BS Rate attributes.
+        """
+        bill_copy = super().copy(cost_ratio=cost_ratio, real_estate=real_estate, **kwargs)
+
+        if cost_ratio is not None:
+            def dec_mult_none(left):
+                return None if left is None else left * cost_ratio
+
+            def int_mult_none(left):
+                return None if left is None else int(left * cost_ratio)
+
+            bill_copy.total_kwh = int_mult_none(bill_copy.total_kwh)
+            bill_copy.eh_kwh = int_mult_none(bill_copy.eh_kwh)
+            bill_copy.bank_kwh = int_mult_none(bill_copy.bank_kwh)
+
+            bill_copy.bs_rate *= cost_ratio
+            bill_copy.bs_cost *= cost_ratio
+            bill_copy.first_kwh = int_mult_none(bill_copy.first_kwh)
+            bill_copy.first_cost = dec_mult_none(bill_copy.first_cost)
+            bill_copy.next_kwh = int_mult_none(bill_copy.next_kwh)
+            bill_copy.next_cost = dec_mult_none(bill_copy.next_cost)
+            bill_copy.cbc_cost = dec_mult_none(bill_copy.cbc_cost)
+            bill_copy.mfc_cost = dec_mult_none(bill_copy.mfc_cost)
+            bill_copy.dsc_total_cost *= cost_ratio
+
+            bill_copy.psc_cost = dec_mult_none(bill_copy.psc_cost)
+            bill_copy.psc_total_cost = dec_mult_none(bill_copy.psc_total_cost)
+            bill_copy.der_cost = dec_mult_none(bill_copy.der_cost)
+            bill_copy.dsa_cost = dec_mult_none(bill_copy.dsa_cost)
+            bill_copy.rda_cost = dec_mult_none(bill_copy.rda_cost)
+            bill_copy.nysa_cost = dec_mult_none(bill_copy.nysa_cost)
+            bill_copy.rbp_cost = dec_mult_none(bill_copy.rbp_cost)
+            bill_copy.spta_cost = dec_mult_none(bill_copy.spta_cost)
+            bill_copy.st_cost = dec_mult_none(bill_copy.st_cost)
+            bill_copy.toc_total_cost *= cost_ratio
+
+            bill_copy.notes += " Ratio of " + str(cost_ratio) + " applied to KWH, cost and BS Rate attributes."
+
+        return bill_copy

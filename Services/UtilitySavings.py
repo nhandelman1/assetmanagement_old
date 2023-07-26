@@ -6,6 +6,7 @@ import pandas as pd
 from Database.POPO.ElectricBillData import ElectricBillData
 from Database.POPO.NatGasBillData import NatGasBillData
 from Services.Electric.Model.PSEG import PSEG
+from Services.Electric.View.PSEGViewBase import PSEGViewBase
 from Services.NatGas.Model.NG import NG
 
 
@@ -17,26 +18,28 @@ class UtilitySavings:
     Attributes:
         see init function docstring
     """
-    def __init__(self, pseg_model, ng_model):
+    def __init__(self, pseg_model, pseg_view, ng_model):
         """ init function
 
         Args:
             pseg_model (PSEG):
+            pseg_view (PSEGViewBase):
             ng_model (NG):
         """
         self.pseg_model = pseg_model
+        self.pseg_view = pseg_view
         self.ng_model = ng_model
 
         self.final_df = pd.DataFrame()
 
-    def calc_savings(self):
+    def calc_savings(self, real_estate):
         """ Run process to calculate savings across all utilities
 
         Initially, this is just for PSEG, NG and Solar but could be expanded to more utilities in the future
         self.final_df holds the final output dataframe with savings by month_year, total and ROI (return on investment)
 
         """
-        pseg_df = self.pseg_model.read_all_service_bills_from_db()
+        pseg_df = self.pseg_model.read_service_bills_from_db_by_resppdr(real_estate_list=[real_estate], to_pd_df=True)
         pseg_df = pseg_df[["start_date", "end_date", "is_actual", "total_kwh", "eh_kwh", "total_cost"]]
         pseg_df = pseg_df[pseg_df["is_actual"] == True].merge(pseg_df[pseg_df["is_actual"] == False],
                                       on=["start_date", "end_date"], how="left", suffixes=["_act", "_est"])
@@ -51,7 +54,7 @@ class UtilitySavings:
             lambda row: ElectricBillData.calc_bill_month_year(row[("PSEG", "start_date")], row[("PSEG", "end_date")]),
             axis=1)
 
-        ng_df = self.ng_model.read_all_service_bills_from_db()
+        ng_df = self.ng_model.read_service_bills_from_db_by_resppdr(real_estate_list=[real_estate], to_pd_df=True)
         ng_df = ng_df[["start_date", "end_date", "is_actual", "total_therms", "saved_therms", "total_cost"]]
         ng_df = ng_df[ng_df["is_actual"] == True].merge(ng_df[ng_df["is_actual"] == False],
                                       on=["start_date", "end_date"], how="left", suffixes=["_act", "_est"])
@@ -87,3 +90,16 @@ class UtilitySavings:
         ws = writer.book["Sheet1"]
         ExcelUtil.sheet_adj_col_width(ws)
         writer.close()
+
+    def do_process(self):
+        """ Run process to calculate savings and create report
+
+        Calculate savings: see self.calc_savings()
+        Create report: see self.to_excel()
+        """
+        re_dict = self.pseg_model.read_all_real_estate()
+        re_id = self.pseg_view.input_select_real_estate(re_dict,
+                                                    pre_str="Calculate utility savings for the selected real estate. ")
+        real_estate = re_dict[re_id]
+        self.calc_savings(real_estate)
+        self.to_excel()

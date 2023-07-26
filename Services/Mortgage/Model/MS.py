@@ -1,4 +1,3 @@
-import decimal
 import os
 import pathlib
 import datetime
@@ -43,105 +42,98 @@ class MS(SimpleServiceModelBase):
         """
         bill_data = MortgageBillData(None, None, None, None, None, None, None, None, None, None, None)
 
-        df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
-                                  (os.getenv("FI_MORGANSTANLEY_DIR") + filename), pages="all")
-
-        df = df_list[0]
-        df.loc[len(df)] = df.columns
-        is_ver1 = len(df.columns) == 2
-        for ind, row in df.iterrows():
-            str1 = row[1]
-
-            if isinstance(str1, str):
-                str1_split = str1.split(" ")
-
-                if "Statement Date:" in str1:
-                    stmt_date = datetime.datetime.strptime(
-                        str1_split[2] if is_ver1 else row[2], "%m/%d/%y").date()
-
-                    # mortgage is a monthly payment so start date is the first day of the month (even if the statement
-                    # date isn't the first day of the month)
-                    bill_data.start_date = stmt_date
-                    # sometimes the statement date is at the end of the previous month. make it a day in the next month
-                    if bill_data.start_date.day >= 25:
-                        bill_data.start_date += datetime.timedelta(days=7)
-                    bill_data.start_date = bill_data.start_date.replace(day=1)
-
-                    # default end date to last day of month of start date
-                    bill_data.end_date = bill_data.start_date + datetime.timedelta(days=31)
-                    bill_data.end_date = bill_data.end_date.replace(day=1) - datetime.timedelta(days=1)
-
-                    bill_data.notes = ("" if bill_data.notes is None else bill_data.notes) + " statement date is " \
-                                      + str(stmt_date)
-
-        df = df_list[1]
-        if len(df.columns) == 4:
-            df[df.columns[1]] = df[df.columns[1]].fillna(df[df.columns[2]])
-            df = df.drop(columns=[df.columns[2]])
-
         def fmt_dec(str_val):
             return Decimal(str_val.replace("$", "").replace(" ", "").replace(",", ""))
 
+        df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
+                                  (os.getenv("FI_MORGANSTANLEY_DIR") + filename), pages="all", guess=False, silent=True)
+
+        df = df_list[0]
         address = ""
         found_address = False
         for ind, row in df.iterrows():
-            str0 = row[0]
-            str1 = row[1]
-            str2 = row[2]
+            str0 = "" if pd.isna(row[0]) else row[0]
+            str1 = "" if pd.isna(row[1]) else row[1]
+            str2 = "" if pd.isna(row[2]) else row[2]
 
-            if isinstance(str0, str):
-                str0_split = str0.split(" ")
+            # bill start date and end date from statement date
+            if any(["Statement Date:" in x for x in [str0, str1]]):
+                stmt_date = datetime.datetime.strptime(str2, "%m/%d/%y").date()
 
-                if "Property Address" in str0:
-                    address = " ".join(str0_split[2:])
-                    found_address = True
-                elif found_address:
-                    # 2nd part of address is in the next row
-                    address += (" " + str0)
-                    found_address = False
-                elif "Outstanding Principal" in str0:
-                    bill_data.outs_prin = fmt_dec(str1)
-                elif "Escrow Balance" in str0:
-                    bill_data.esc_bal = fmt_dec(str1)
-                    # stupid formatting so escrow payment is in str0
-                    e_pos = str0.find("E")
-                    if e_pos > 1:
-                        bill_data.esc_pmt = fmt_dec(str0[:str0.find("E")])
+                # mortgage is a monthly payment so start date is the first day of the month (even if the statement
+                # date isn't the first day of the month)
+                bill_data.start_date = stmt_date
+                # sometimes the statement date is at the end of the previous month. make it a day in the next month
+                if bill_data.start_date.day >= 25:
+                    bill_data.start_date += datetime.timedelta(days=7)
+                bill_data.start_date = bill_data.start_date.replace(day=1)
 
-            if isinstance(str2, str):
-                str2_split = str2.split(" ")
+                # default end date to last day of month of start date
+                bill_data.end_date = bill_data.start_date + datetime.timedelta(days=31)
+                bill_data.end_date = bill_data.end_date.replace(day=1) - datetime.timedelta(days=1)
 
-                if "Principal" in str2:
-                    bill_data.prin_pmt = fmt_dec(str2_split[1])
-                elif "Interest" in str2:
-                    bill_data.int_pmt = fmt_dec(str2_split[1])
-                elif "Escrow" in str2:
-                    try:
-                        bill_data.esc_pmt = fmt_dec(str2_split[-1])
-                    except decimal.InvalidOperation:
-                        pass
-                elif "Other" in str2 and len(str2_split) == 2:
-                    bill_data.other_pmt = fmt_dec(str2_split[1])
-                elif "Total Amount Due" in str2:
-                    bill_data.total_cost = fmt_dec(str2_split[3])
+                bill_data.notes = ("" if bill_data.notes is None else bill_data.notes) + " statement date is " + \
+                                  str(stmt_date)
 
-        bill_data.real_estate = self.read_real_estate_by_address(Address.to_address(address))
+            # address
+            if "Property Address" in str0:
+                # relevant address words are either completely numeric or upper case
+                for s in str0.split(" "):
+                    if s.isnumeric() or s.isupper():
+                        address += (" " + s)
+                found_address = True
+            elif found_address:
+                # 2nd part of address is in the next row
+                # relevant address words are either all numeric or all upper case with punctuation
+                for s in str0.split(" "):
+                    if any([x.islower() for x in s]):
+                        continue
+                    address += (" " + s)
+                found_address = False
+
+            # "Principal" comes in other rows. don't want to overwrite prin_pmt
+            if any(["Principal" in x for x in [str0, str1]]) and bill_data.prin_pmt is None:
+                bill_data.prin_pmt = fmt_dec(str2)
+            # "Interest" is found in later rows
+            if any(["Interest" in x for x in [str0, str1]]) and bill_data.int_pmt is None:
+                bill_data.int_pmt = fmt_dec(str2)
+            # not sure if "Outstanding Principal" appears in later rows but assuming it does
+            if "Outstanding Principal" in str0 and bill_data.outs_prin is None:
+                bill_data.outs_prin = fmt_dec(str0.split(" ")[2])
+            if "Escrow Balance" in str0:
+                if bill_data.esc_bal is None:
+                    bill_data.esc_bal = fmt_dec(str0.split(" ")[2])
+            elif "Escrow" in str0 and bill_data.esc_pmt is None:
+                bill_data.esc_pmt = fmt_dec(str2)
+            if "Escrow" in str1 and bill_data.esc_pmt is None:
+                bill_data.esc_pmt = fmt_dec(str0[:str0.find(".")+2])
+            # Other pmt comes immediately after escrow payment
+            if any(["Other" in x for x in [str0, str1]]) and bill_data.esc_pmt is not None and \
+                    bill_data.other_pmt is None:
+                bill_data.other_pmt = fmt_dec(str2)
+            if "Current Payment Due" in str0:
+                bill_data.total_cost = fmt_dec(str1)
+            elif "Current Payment Due" in str1:
+                bill_data.total_cost = fmt_dec(str0[:str0.find(".") + 2])
+
+        bill_data.real_estate = self.read_real_estate_by_address(Address.to_address(address.strip()))
         bill_data.service_provider = self.read_service_provider_by_enum(ServiceProviderEnum.MS_MI)
         self.asb_dict.insert_bills(bill_data)
 
         return bill_data
 
-    def insert_service_bills_to_db(self, bill_list):
+    def insert_service_bills_to_db(self, bill_list, ignore=None):
         """ Insert mortgage bills to mortgage_bill_data table
 
         Args:
             bill_list (list[MortgageBillData]): mortgage bill data to insert
+            ignore (Optional[boolean]): see superclass docstring
 
         Raises:
             MySQLException: if database insert issue occurs
         """
         with MySQLAM() as mam:
-            mam.mortgage_bill_data_insert(bill_list)
+            mam.mortgage_bill_data_insert(bill_list, ignore=ignore)
 
     def update_service_bills_in_db_paid_date_by_id(self, bill_list):
         """ Update service bills paid_date in mortgage_bill_data table by id
@@ -179,19 +171,6 @@ class MS(SimpleServiceModelBase):
         self.asb_dict.insert_bills(bill_list)
         return bill_list
 
-    def read_all_service_bills_from_db(self):
-        with MySQLAM() as mam:
-            bill_list = mam.mortgage_bill_data_read()
-
-        df = pd.DataFrame()
-
-        for bill in bill_list:
-            df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
-
-        self.asb_dict.insert_bills(bill_list)
-
-        return df.sort_values(by=["start_date"])
-
     def read_all_service_bills_from_db_unpaid(self):
         with MySQLAM() as mam:
             bill_list = mam.mortgage_bill_data_read(wheres=[["paid_date", "is", None]])
@@ -199,3 +178,13 @@ class MS(SimpleServiceModelBase):
         self.asb_dict.insert_bills(bill_list)
 
         return bill_list
+
+    def read_service_bills_from_db_by_resppdr(self, real_estate_list=(), service_provider_list=(), paid_date_min=None,
+                                              paid_date_max=None, to_pd_df=False):
+        wheres = self.resppdr_wheres_clause(real_estate_list=real_estate_list,
+                service_provider_list=service_provider_list, paid_date_min=paid_date_min, paid_date_max=paid_date_max)
+
+        with MySQLAM() as mam:
+            bill_list = mam.mortgage_bill_data_read(wheres=wheres, order_bys=["paid_date"])
+
+        return self.bills_post_read(bill_list, to_pd_df=to_pd_df)

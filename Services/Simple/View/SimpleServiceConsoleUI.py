@@ -64,3 +64,10 @@ class SimpleServiceConsoleUI(SimpleConsoleUIBase, SimpleViewBase):
         bill_list = self.input_paid_dates([bill])
 
         return bill if len(bill_list) == 0 else bill_list[0]
+
+    def display_bills(self, bill_list):
+        print("\n********** Simple Bills **********\n")
+        for i, bill in enumerate(bill_list):
+            print("__________ Simple Bill #" + str(i+1) + " __________")
+            self.display_bill(bill)
+            print("\n")

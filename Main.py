@@ -1,3 +1,4 @@
+import colorama
 from Statistics.LeastSquaresReg.LSRegression import LSRegression
 from Statistics.RobustReg.RLMRegression import RLMRegression
 from Statistics.Regression import RegrType
@@ -18,6 +19,7 @@ from scipy.stats import t
 from Statistics.Regression import RegrType
 import dotenv
 from Services.BillAndDataInput import BillAndDataInput
+from Services.BillAndDataDisplay import BillAndDataDisplay
 from Services.Simple.Model.SimpleServiceModel import SimpleServiceModel
 from Services.Simple.View.SimpleServiceConsoleUI import SimpleServiceConsoleUI
 from Services.Mortgage.Model.MS import MS
@@ -89,21 +91,44 @@ def run_old():
     print(reg.sm_results_summary())
     '''
 
-def run():
-    bd = BillAndDataInput(SimpleServiceModel(), SimpleServiceConsoleUI(), MS(), MSConsoleUI(), Solar(),
-                          SolarConsoleUI(), PSEG(), PSEGConsoleUI(), NG(), NGConsoleUI(), DepreciationModel(),
-                          DepreciationConsoleUI())
-    bd.do_main_menu_console_process()
 
-    #us = UtilitySavings(PSEG(), NG())
-    #us.calc_savings()
-    #us.to_excel()
+def run_bill_data_console():
+    """ Bill and Data Console Input and Display Main Menu """
+    bill_and_data_input = BillAndDataInput(SimpleServiceModel(), SimpleServiceConsoleUI(), MS(), MSConsoleUI(), Solar(),
+                                           SolarConsoleUI(), PSEG(), PSEGConsoleUI(), NG(), NGConsoleUI(),
+                                           DepreciationModel(), DepreciationConsoleUI())
+    bill_and_data_display = BillAndDataDisplay(SimpleServiceModel(), SimpleServiceConsoleUI(), MS(), MSConsoleUI(),
+                                               Solar(), SolarConsoleUI(), PSEG(), PSEGConsoleUI(), NG(), NGConsoleUI(),
+                                               DepreciationModel(), DepreciationConsoleUI())
 
-    print()
+    while True:
+        try:
+            print("\n######################################################################")
+            print("Choose a bill or data option from the following:\n")
+            print("1: Input or Create Bills")
+            print("2: Display Bill Data")
+            print("3: Utility Savings Report - Run then close program to see file in directory")
+            print("0: Exit Program")
+            opt = input("\nSelection: ")
+
+            if opt == "1":
+                bill_and_data_input.do_input_or_create_bill_process()
+            elif opt == "2":
+                bill_and_data_display.do_display_process()
+            elif opt == "3":
+                us = UtilitySavings(PSEG(), PSEGConsoleUI(), NG())
+                us.do_process()
+            elif opt == "0":
+                break
+            else:
+                print(opt + " is not a valid option. Try again.")
+        except Exception as ex:
+            print(colorama.Fore.RED, str(ex))
+            print(colorama.Style.RESET_ALL)
 
 
 # Run the function if this is the main file executed
 if __name__ == "__main__":
     dotenv.load_dotenv()
 
-    run()
+    run_bill_data_console()

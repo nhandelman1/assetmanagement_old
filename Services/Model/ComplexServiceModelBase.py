@@ -1,4 +1,5 @@
 import datetime
+import pandas as pd
 from abc import abstractmethod
 from typing import Optional, Union
 from Database.MySQLAM import MySQLAM
@@ -52,18 +53,32 @@ class ComplexServiceModelBase(SimpleServiceModelBase):
         raise NotImplementedError("process_service_bill() not implemented by subclass")
 
     @abstractmethod
-    def read_all_service_bills_from_db(self):
-        """ Read all service bills
+    def read_service_bills_from_db_by_resppdr(self, real_estate_list=(), service_provider_list=(), paid_date_min=None,
+                                              paid_date_max=None, to_pd_df=None):
+        """ Read service bills from table by real estate(s), service provider(s), paid date range inclusive
 
         Service bills are inserted in self.asb_dict or self.esb_dict
+        See SimpleServiceModelBase.resppdr_wheres_clause() when overriding this function.
+        See self.bills_post_read() when overriding this function.
+
+        Args:
+            real_estate_list (list[RealEstate]): real estate location(s) of bills. Default () for all locations
+            service_provider_list (list[ServiceProvider]): service provider(s) of bills. Default () for all providers
+            paid_date_min (Optional[datetime.date]): bills with paid date greater than or equal to this date. Default
+                None for no minimum
+            paid_date_max (Optional[datetime.date]): bills with paid date less than or equal to this date. Default None
+                for no maximum
+            to_pd_df (boolean): True to return data as a dataframe. Default False to return bill list
 
         Returns:
-            pd.DataFrame: with all service bill data ordered by most recent to oldest start date
+            Union[list[ComplexServiceBillDataBase], pd.DataFrame]:
+                list: subclass instances. empty if no bills matching parameters. ordered by paid date increasing
+                dataframe: with all bill data ordered by start date decreasing then actual before estimated bills
 
         Raises:
             MySQLException: if issue with database read
         """
-        raise NotImplementedError("read_all_service_bills_from_db() not implemented by subclass")
+        raise NotImplementedError("read_service_bills_from_db_by_resppdr() not implemented by subclass")
 
     @abstractmethod
     def get_utility_data_instance(self, str_dict):
@@ -159,6 +174,37 @@ class ComplexServiceModelBase(SimpleServiceModelBase):
             MySQLException: if issue with database read
         """
         raise NotImplementedError("read_all_service_bills_from_db_unpaid() not implemented by subclass")
+
+    def bills_post_read(self, bill_list, to_pd_df=False):
+        """ Convenience function to save bill_list to model and convert bill_list to dataframe if specified
+
+        Args:
+            bill_list (list[ComplexServiceBillDataBase]): subclass instances
+            to_pd_df (boolean): True to return data as a dataframe. Default False to return bill_list unaltered
+
+        Returns:
+            Union[list[ComplexServiceBillDataBase], pd.DataFrame]:
+                list: bill_list unaltered
+                dataframe: with all bill data ordered by start date decreasing then actual before estimated bills
+        """
+        if to_pd_df:
+            df = pd.DataFrame()
+
+            for bill in bill_list:
+                df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
+                if bill.is_actual:
+                    self.asb_dict.insert_bills(bill)
+                else:
+                    self.esb_dict.insert_bills(bill)
+
+            return df.sort_values(by=["start_date", "is_actual"])
+        else:
+            for bill in bill_list:
+                if bill.is_actual:
+                    self.asb_dict.insert_bills(bill)
+                else:
+                    self.esb_dict.insert_bills(bill)
+            return bill_list
 
     def read_all_estimate_notes_by_reid_provider(self, real_estate, provider):
         """ read estimate notes from estimate_notes table by real estate and provider and order by note_order

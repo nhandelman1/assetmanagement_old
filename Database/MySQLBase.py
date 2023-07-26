@@ -299,12 +299,13 @@ class MySQLBase(ABC):
             self.logger.exception("DB rollback exception")
             raise MySQLException(format(err1) + "\nRollback Failed\n" + format(err2))
 
-    def dictinsertable_insert(self, table, di_list):
+    def dictinsertable_insert(self, table, di_list, ignore=None):
         """ Classes that implement DictInsertable can call this function for insert queries
 
         Args:
             table (str): table to insert into
             di_list (list[DictInsertable]):
+            ignore (Optional[boolean]): True to use insert ignore statement. Default None for False to use insert
 
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
@@ -315,7 +316,7 @@ class MySQLBase(ABC):
         di_list = [b.to_insert_dict() for b in di_list]
 
         qw = QueryWriter(table, fields=list(di_list[0].keys()))
-        query, di_list = qw.write_insert_query(di_list)
+        query, di_list = qw.write_insert_query(di_list, ignore=ignore)
 
         self.execute_commit(query, params_list=di_list, execute_many=True)
 

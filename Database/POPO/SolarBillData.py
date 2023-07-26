@@ -65,6 +65,26 @@ class SolarBillData(SimpleServiceBillDataBase):
             str(self.oc_bom_basis) + ", PNL Pct: " + str(self.oc_pnl_pct) + "%, PNL: " + str(self.oc_pnl) + \
             ", EOM Basis: " + str(self.oc_eom_basis)
 
+    def copy(self, cost_ratio=None, real_estate=None, **kwargs):
+        """ see superclass docstring
+
+        Ratio applied to all attributes except opportunity cost pnl percent.
+        """
+        bill_copy = super().copy(cost_ratio=cost_ratio, real_estate=real_estate, **kwargs)
+
+        if cost_ratio is not None:
+            bill_copy.solar_kwh = int(bill_copy.solar_kwh * cost_ratio)
+            bill_copy.home_kwh = int(bill_copy.home_kwh * cost_ratio)
+            bill_copy.actual_costs *= cost_ratio
+            bill_copy.oc_bom_basis *= cost_ratio
+            bill_copy.oc_pnl *= cost_ratio
+            bill_copy.oc_eom_basis *= cost_ratio
+
+            bill_copy.notes += " Ratio of " + str(cost_ratio) + \
+                               " applied to all attributes except opportunity cost pnl percent."
+
+        return bill_copy
+
     def calc_variables(self):
         """ Calculate instance variables that can be calculated from other instance variables
 

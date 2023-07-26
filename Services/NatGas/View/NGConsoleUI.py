@@ -22,6 +22,13 @@ class NGConsoleUI(ComplexConsoleUIBase, NGViewBase):
 
         return filename
 
+    def display_bills(self, bill_list):
+        print("\n********** Natural Gas Bills **********\n")
+        for i, bill in enumerate(bill_list):
+            print("__________ Natural Gas Bill #" + str(i+1) + " __________")
+            self.display_bill(bill)
+            print("\n")
+
     def display_utility_data_found_or_not(self, found, month_year):
         print("\n" + ("" if found else "No ") + "Natural gas data found for month-year: " + month_year + ".")
 

@@ -18,3 +18,6 @@ class SimpleServiceBillData(SimpleServiceBillDataBase):
                          notes=notes)
 
         self.db_dict_update(db_dict)
+
+    def copy(self, cost_ratio=None, real_estate=None, **kwargs):
+        return super().copy(cost_ratio=cost_ratio, real_estate=real_estate, **kwargs)

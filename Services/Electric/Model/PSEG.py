@@ -146,17 +146,18 @@ class PSEG(ComplexServiceModelBase):
 
         return bill_data
 
-    def insert_service_bills_to_db(self, bill_list):
+    def insert_service_bills_to_db(self, bill_list, ignore=None):
         """ Insert monthly electric bills to table
 
         Args:
             bill_list (list[ElectricBillData]): electric bill data to insert
+            ignore (Optional[boolean]): see superclass docstring
 
         Raises:
             MySQLException: if database insert issue occurs
         """
         with MySQLAM() as mam:
-            mam.electric_bill_data_insert(bill_list)
+            mam.electric_bill_data_insert(bill_list, ignore=ignore)
 
     def update_service_bills_in_db_paid_date_by_id(self, bill_list):
         """ Update electric bills paid_date in electric_bill_data table by id
@@ -195,21 +196,6 @@ class PSEG(ComplexServiceModelBase):
 
         return bill_list
 
-    def read_all_service_bills_from_db(self):
-        with MySQLAM() as mam:
-            bill_list = mam.electric_bill_data_read()
-
-        df = pd.DataFrame()
-
-        for bill in bill_list:
-            df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
-            if bill.is_actual:
-                self.asb_dict.insert_bills(bill)
-            else:
-                self.esb_dict.insert_bills(bill)
-
-        return df.sort_values(by=["start_date", "is_actual"])
-
     def read_all_service_bills_from_db_unpaid(self):
         """ Read all electric bills that have a null paid date and are actual bills
 
@@ -227,6 +213,16 @@ class PSEG(ComplexServiceModelBase):
         self.asb_dict.insert_bills(bill_list)
 
         return bill_list
+
+    def read_service_bills_from_db_by_resppdr(self, real_estate_list=(), service_provider_list=(), paid_date_min=None,
+                                              paid_date_max=None, to_pd_df=False):
+        wheres = self.resppdr_wheres_clause(real_estate_list=real_estate_list,
+                service_provider_list=service_provider_list, paid_date_min=paid_date_min, paid_date_max=paid_date_max)
+
+        with MySQLAM() as mam:
+            bill_list = mam.electric_bill_data_read(wheres=wheres, order_bys=["paid_date"])
+
+        return self.bills_post_read(bill_list, to_pd_df=to_pd_df)
 
     def insert_monthly_data_to_db(self, electric_data):
         """ Insert monthly electric data to table

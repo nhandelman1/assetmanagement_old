@@ -1006,16 +1006,17 @@ class MySQLAM(MySQLBase):
 
         return bill_list
 
-    def solar_bill_data_insert(self, bill_list):
+    def solar_bill_data_insert(self, bill_list, ignore=None):
         """ Insert into solar_bill_data table
 
         Args:
             bill_list (list[SolarBillData]):
+            ignore (Optional[boolean]): True to use insert ignore statement. Default None for False to use insert
 
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        self.dictinsertable_insert("solar_bill_data", bill_list)
+        self.dictinsertable_insert("solar_bill_data", bill_list, ignore=ignore)
 
     def solar_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
         """ Update solar_bill_data table
@@ -1068,16 +1069,17 @@ class MySQLAM(MySQLBase):
 
         return bill_list
 
-    def electric_bill_data_insert(self, bill_list):
+    def electric_bill_data_insert(self, bill_list, ignore=None):
         """ Insert into electric_bill_data table
 
         Args:
             bill_list (list[ElectricBillData]):
+            ignore (Optional[boolean]): True to use insert ignore statement. Default None for False to use insert
 
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        self.dictinsertable_insert("electric_bill_data", bill_list)
+        self.dictinsertable_insert("electric_bill_data", bill_list, ignore=ignore)
 
     def electric_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
         """ Update electric_bill_data table
@@ -1185,16 +1187,17 @@ class MySQLAM(MySQLBase):
 
         return bill_list
 
-    def natgas_bill_data_insert(self, bill_list):
+    def natgas_bill_data_insert(self, bill_list, ignore=None):
         """ Insert into natgas_bill_data table
 
         Args:
             bill_list (list[NatGasBillData]):
+            ignore (Optional[boolean]): True to use insert ignore statement. Default None for False to use insert
 
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        self.dictinsertable_insert("natgas_bill_data", bill_list)
+        self.dictinsertable_insert("natgas_bill_data", bill_list, ignore=ignore)
 
     def natgas_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
         """ Update natgas_bill_data table
@@ -1257,16 +1260,17 @@ class MySQLAM(MySQLBase):
         """
         self.dictinsertable_insert("natgas_data", data_list)
 
-    def simple_bill_data_insert(self, bill_list):
+    def simple_bill_data_insert(self, bill_list, ignore=None):
         """ Insert into simple_bill_data table
 
         Args:
             bill_list (list[SimpleServiceBillData]):
+            ignore (Optional[boolean]): True to use insert ignore statement. Default None for False to use insert
 
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        self.dictinsertable_insert("simple_bill_data", bill_list)
+        self.dictinsertable_insert("simple_bill_data", bill_list, ignore=ignore)
 
     def simple_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
         """ Update simple_bill_data table
@@ -1318,16 +1322,17 @@ class MySQLAM(MySQLBase):
 
         return bill_list
 
-    def mortgage_bill_data_insert(self, bill_list):
+    def mortgage_bill_data_insert(self, bill_list, ignore=None):
         """ Insert into mortgage_bill_data table
 
         Args:
             bill_list (list[MortgageBillData]):
+            ignore (Optional[boolean]): True to use insert ignore statement. Default None for False to use insert
 
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        self.dictinsertable_insert("mortgage_bill_data", bill_list)
+        self.dictinsertable_insert("mortgage_bill_data", bill_list, ignore=ignore)
 
     def mortgage_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
         """ Update mortgage_bill_data table
@@ -1380,16 +1385,17 @@ class MySQLAM(MySQLBase):
 
         return bill_list
 
-    def depreciation_bill_data_insert(self, bill_list):
+    def depreciation_bill_data_insert(self, bill_list, ignore=None):
         """ Insert into depreciation_bill_data table
 
         Args:
             bill_list (list[DepreciationBillData]):
+            ignore (Optional[boolean]): True to use insert ignore statement. Default None for False to use insert
 
         Raises:
             MySQLException: if any required columns are missing or other database issue occurs
         """
-        self.dictinsertable_insert("depreciation_bill_data", bill_list)
+        self.dictinsertable_insert("depreciation_bill_data", bill_list, ignore=ignore)
 
     def depreciation_bill_data_update(self, fields, set_params=(), wheres=(), where_params=None, bill_list=()):
         """ Update depreciation_bill_data table

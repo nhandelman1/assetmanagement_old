@@ -117,17 +117,18 @@ class DepreciationModel(SimpleServiceModelBase):
 
         return dbd
 
-    def insert_service_bills_to_db(self, bill_list):
+    def insert_service_bills_to_db(self, bill_list, ignore=None):
         """ Insert depreciation bills to depreciation_bill_data table
 
         Args:
             bill_list (list[DepreciationBillData]): depreciation bill data to insert
+            ignore (Optional[boolean]): see superclass docstring
 
         Raises:
             MySQLException: if database insert issue occurs
         """
         with MySQLAM() as mam:
-            mam.depreciation_bill_data_insert(bill_list)
+            mam.depreciation_bill_data_insert(bill_list, ignore=ignore)
 
     def update_service_bills_in_db_paid_date_by_id(self, bill_list):
         """ Update service bills paid_date in depreciation_bill_data table by id
@@ -165,19 +166,6 @@ class DepreciationModel(SimpleServiceModelBase):
         self.asb_dict.insert_bills(bill_list)
         return bill_list
 
-    def read_all_service_bills_from_db(self):
-        with MySQLAM() as mam:
-            bill_list = mam.depreciation_bill_data_read()
-
-        df = pd.DataFrame()
-
-        for bill in bill_list:
-            df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
-
-        self.asb_dict.insert_bills(bill_list)
-
-        return df.sort_values(by=["start_date"])
-
     def read_all_service_bills_from_db_unpaid(self):
         with MySQLAM() as mam:
             bill_list = mam.depreciation_bill_data_read(wheres=[["paid_date", "is", None]])
@@ -185,6 +173,16 @@ class DepreciationModel(SimpleServiceModelBase):
         self.asb_dict.insert_bills(bill_list)
 
         return bill_list
+
+    def read_service_bills_from_db_by_resppdr(self, real_estate_list=(), service_provider_list=(), paid_date_min=None,
+                                              paid_date_max=None, to_pd_df=False):
+        wheres = self.resppdr_wheres_clause(real_estate_list=real_estate_list,
+                service_provider_list=service_provider_list, paid_date_min=paid_date_min, paid_date_max=paid_date_max)
+
+        with MySQLAM() as mam:
+            bill_list = mam.depreciation_bill_data_read(wheres=wheres, order_bys=["paid_date"])
+
+        return self.bills_post_read(bill_list, to_pd_df=to_pd_df)
 
     def read_real_property_value_by_reipd(self, real_estate, rpv_item, purchase_date):
         """ Read real property value from real_property_values table by real estate, item and purchase date

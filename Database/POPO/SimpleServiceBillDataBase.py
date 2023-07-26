@@ -1,3 +1,4 @@
+import copy
 import pandas as pd
 from abc import ABC, abstractmethod
 from typing import Optional
@@ -61,6 +62,41 @@ class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
         return str(self.real_estate) + "\n" + str(self.service_provider) + "\nStart Date: " + str(self.start_date) + \
             ", EndDate: " + str(self.end_date) + "\nTotal Cost: " + str(self.total_cost) + ", Paid Date: " + \
             str(self.paid_date) + "\nNotes: " + str(self.notes)
+
+    @abstractmethod
+    def copy(self, cost_ratio=None, real_estate=None, **kwargs):
+        """ Create and return a shallow copy of this bill with args applied as described
+
+        cost_ratio applied to total_cost in this function and notes is updated indicating this. subclasses may apply
+        cost_ratio to other attributes related to total_cost, typically numerical attributes, and update notes to
+        indicate any changes.
+        notes is updated to indicate copied bill is a copy
+
+        Args:
+            cost_ratio (Optional[Decimal]): Must be between 0 and 1. Applied to instance attributes as specified in this
+                function and overriding functions in subclasses. Default None to not apply a cost ratio.
+            real_estate (Optional[RealEstate]): replace self.real_estate with this value. Update notes to reflect the
+                change. Default None to not replace
+            **kwargs: specified by subclasses
+
+        Returns:
+            SimpleServiceBillDataBase: subclass instance
+
+        Raises:
+            ValueError: if cost ratio is not between 0 and 1 inclusive
+        """
+        bill_copy = copy.copy(self)
+        bill_copy.notes = "" if bill_copy.notes is None else bill_copy.notes
+        bill_copy.notes += " This bill is a copy of the original bill."
+        if cost_ratio is not None:
+            if cost_ratio < Decimal(0) or cost_ratio > Decimal(1):
+                raise ValueError("cost ratio must be between 0 and 1 inclusive")
+            bill_copy.total_cost *= cost_ratio
+            bill_copy.notes += " Ratio of " + str(cost_ratio) + " applied to total cost."
+        if real_estate is not None:
+            bill_copy.real_estate = real_estate
+            bill_copy.notes += " Real estate changed from original."
+        return bill_copy
 
     @property
     def start_date(self):

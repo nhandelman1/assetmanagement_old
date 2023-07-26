@@ -15,6 +15,13 @@ class DepreciationConsoleUI(SimpleConsoleUIBase, DepreciationViewBase):
     def input_read_new_bill(self):
         raise NotImplementedError("DepreciationConsoleUI does not implement input_read_new_bill()")
 
+    def display_bills(self, bill_list):
+        print("\n********** Depreciation Bills **********\n")
+        for i, bill in enumerate(bill_list):
+            print("__________ Depreciation Bill #" + str(i+1) + " __________")
+            self.display_bill(bill)
+            print("\n")
+
     def input_depreciation_year(self):
         current_year = datetime.date.today().year
         year_print = "\nEnter depreciation year with format YYYY (must be previous year (before " \

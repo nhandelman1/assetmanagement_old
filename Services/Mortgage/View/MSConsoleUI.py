@@ -14,3 +14,10 @@ class MSConsoleUI(SimpleConsoleUIBase, MortgageViewBase):
         filename = input("Enter mortgage bill file name (include extension): ")
 
         return filename
+
+    def display_bills(self, bill_list):
+        print("\n********** Mortgage Bills **********\n")
+        for i, bill in enumerate(bill_list):
+            print("__________ Mortgage Bill #" + str(i+1) + " __________")
+            self.display_bill(bill)
+            print("\n")

@@ -1,6 +1,4 @@
 import datetime
-import textwrap
-
 import pandas as pd
 from decimal import Decimal
 from typing import Optional
@@ -50,6 +48,23 @@ class DepreciationBillData(SimpleServiceBillDataBase):
         """
         return super().__str__() + "\nPeriod Usage Pct: " + str(self.period_usage_pct) + "%\nReal Property Values:\n" \
             + textwrap_lines(str(self.real_property_values))
+
+    def copy(self, cost_ratio=None, real_estate=None, **kwargs):
+        """ see superclass docstring
+
+        Args:
+            cost_ratio: see superclass docstring
+            real_estate: see superclass docstring
+            **kwargs:
+                real_property_values (Optional[RealPropertyValues]): replace self.real_property_values with this value.
+                    Update notes to reflect the change. Default None to not replace (or don't send the kwarg)
+        """
+        bill_copy = super().copy(cost_ratio=cost_ratio, real_estate=real_estate, **kwargs)
+        if "real_property_values" in kwargs:
+            bill_copy.real_property_values = kwargs["real_property_values"]
+            bill_copy.notes = "" if bill_copy.notes is None else bill_copy.notes
+            bill_copy.notes += " Real property values changed from original."
+        return bill_copy
 
     @SimpleServiceBillDataBase.start_date.setter
     def start_date(self, start_date):

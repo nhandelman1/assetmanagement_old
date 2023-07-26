@@ -109,11 +109,12 @@ class SimpleServiceModelBase(ABC):
         raise NotImplementedError("process_service_bill() not implemented by subclass")
 
     @abstractmethod
-    def insert_service_bills_to_db(self, bill_list):
+    def insert_service_bills_to_db(self, bill_list, ignore=None):
         """ Insert service bills to table
 
         Args:
             bill_list (list[SimpleServiceBillDataBase]): list of subclass instances to insert
+            ignore (Optional[boolean]): True to use insert ignore statement. Default None for False to use insert
 
         Raises:
             MySQLException: if database insert issue occurs
@@ -152,20 +153,6 @@ class SimpleServiceModelBase(ABC):
         raise NotImplementedError("read_service_bill_from_db_by_start_date() not implemented by subclass")
 
     @abstractmethod
-    def read_all_service_bills_from_db(self):
-        """ Read all service bills
-
-        Service bills are inserted in self.asb_dict
-
-        Returns:
-            pd.DataFrame: with all service bill data ordered by most recent to oldest start date
-
-        Raises:
-            MySQLException: if issue with database read
-        """
-        raise NotImplementedError("read_all_service_bills_from_db() not implemented by subclass")
-
-    @abstractmethod
     def read_all_service_bills_from_db_unpaid(self):
         """ Read all service bills that have a null paid date
 
@@ -178,6 +165,89 @@ class SimpleServiceModelBase(ABC):
             MySQLException: if issue with database read
         """
         raise NotImplementedError("read_all_unpaid_service_bills_from_db() not implemented by subclass")
+
+    @abstractmethod
+    def read_service_bills_from_db_by_resppdr(self, real_estate_list=(), service_provider_list=(), paid_date_min=None,
+                                              paid_date_max=None, to_pd_df=None):
+        """ Read service bills from table by real estate(s), service provider(s), paid date range inclusive
+
+        Service bills are inserted in self.asb_dict
+        See SimpleServiceModelBase.resppdr_wheres_clause() when overriding this function.
+        See self.bills_post_read() when overriding this function.
+
+        Args:
+            real_estate_list (list[RealEstate]): real estate location(s) of bills. Default () for all locations
+            service_provider_list (list[ServiceProvider]): service provider(s) of bills. Default () for all providers
+            paid_date_min (Optional[datetime.date]): bills with paid date greater than or equal to this date. Default
+                None for no minimum
+            paid_date_max (Optional[datetime.date]): bills with paid date less than or equal to this date. Default None
+                for no maximum
+            to_pd_df (boolean): True to return data as a dataframe. Default False to return bill list
+
+        Returns:
+            Union[list[SimpleServiceBillDataBase], pd.DataFrame]:
+                list: subclass instances. empty if no bills matching parameters. ordered by paid date increasing
+                dataframe: with all bill data ordered by start date decreasing
+
+        Raises:
+            MySQLException: if issue with database read
+        """
+        raise NotImplementedError("read_service_bills_from_db_by_resppdr() not implemented by subclass")
+
+    @staticmethod
+    def resppdr_wheres_clause(real_estate_list=(), service_provider_list=(), paid_date_min=None,
+                              paid_date_max=None):
+        """ Create where clause for self.read_service_bills_from_db_by_resppdr() function
+
+        See SimpleServiceModelBase.read_service_bills_from_db_by_resppdr(). The Args are common to all
+        SimpleServiceBillDataBase subclasses so no need to reimplement in each subclass of this class.
+
+        Args:
+            real_estate_list (list[RealEstate]): real estate location(s) of bills. Default () for all locations
+            service_provider_list (list[ServiceProvider]): service provider(s) of bills. Default () for all providers
+            paid_date_min (Optional[datetime.date]): bills with paid date greater than or equal to this date. Default
+                None for no minimum
+            paid_date_max (Optional[datetime.date]): bills with paid date less than or equal to this date. Default None
+                for no maximum
+
+        Returns:
+            list[list]: where clause with up to 4 sub lists with 3 elements each
+        """
+        wheres = []
+        if len(real_estate_list) > 0:
+            wheres.append(["real_estate_id", "in", [x.id for x in real_estate_list]])
+        if len(service_provider_list) > 0:
+            wheres.append(["service_provider_id", "in", [x.id for x in service_provider_list]])
+        if paid_date_min is not None:
+            wheres.append(["paid_date", ">=", paid_date_min])
+        if paid_date_max is not None:
+            wheres.append(["paid_date", "<=", paid_date_max])
+
+        return wheres
+
+    def bills_post_read(self, bill_list, to_pd_df=False):
+        """ Convenience function to save bill_list to model and convert bill_list to dataframe if specified
+
+        Args:
+            bill_list (list[SimpleServiceBillDataBase]): subclass instances
+            to_pd_df (boolean): True to return data as a dataframe. Default False to return bill_list unaltered
+
+        Returns:
+            Union[list[SimpleServiceBillDataBase], pd.DataFrame]:
+                list: bill_list unaltered
+                dataframe: with all bill data ordered by start date decreasing
+        """
+        self.asb_dict.insert_bills(bill_list)
+
+        if to_pd_df:
+            df = pd.DataFrame()
+
+            for bill in bill_list:
+                df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
+
+            return df.sort_values(by=["start_date"])
+        else:
+            return bill_list
 
     def read_real_estate_by_address(self, address):
         """ Read real estate from real_estate table by address

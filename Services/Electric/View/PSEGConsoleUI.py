@@ -22,6 +22,13 @@ class PSEGConsoleUI(ComplexConsoleUIBase, PSEGViewBase):
 
         return filename
 
+    def display_bills(self, bill_list):
+        print("\n********** Electric Bills **********\n")
+        for i, bill in enumerate(bill_list):
+            print("__________ Electric Bill #" + str(i+1) + " __________")
+            self.display_bill(bill)
+            print("\n")
+
     def display_utility_data_found_or_not(self, found, month_year):
         print("\n" + ("" if found else "No ") + "Electric data found for month-year: " + month_year + ".")
 

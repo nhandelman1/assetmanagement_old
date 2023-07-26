@@ -144,3 +144,43 @@ class NatGasBillData(ComplexServiceBillDataBase):
             "\n  NY State Sales Tax: Rate: " + str(self.ss_nysst_rate) + ", Cost: " + str(self.ss_nysst_cost) + \
             "\nOther Charges/Adjustments: Total Cost: " + str(self.oca_total_cost) + \
             "\n  Paperless Billing Credit: Cost: " + str(self.pbc_cost)
+
+    def copy(self, cost_ratio=None, real_estate=None, **kwargs):
+        """ see superclass docstring
+
+        Ratio applied to therms and cost attributes.
+        """
+        bill_copy = super().copy(cost_ratio=cost_ratio, real_estate=real_estate, **kwargs)
+
+        if cost_ratio is not None:
+            def dec_mult_none(left):
+                return None if left is None else left * cost_ratio
+
+            def int_mult_none(left):
+                return None if left is None else int(left * cost_ratio)
+
+            bill_copy.total_therms = int_mult_none(bill_copy.total_therms)
+            bill_copy.saved_therms = int_mult_none(bill_copy.saved_therms)
+            bill_copy.bsc_therms *= cost_ratio
+            bill_copy.bsc_cost *= cost_ratio
+            bill_copy.next_therms *= cost_ratio
+            bill_copy.next_cost *= cost_ratio
+            bill_copy.over_therms = dec_mult_none(bill_copy.over_therms)
+            bill_copy.over_cost = dec_mult_none(bill_copy.over_cost)
+            bill_copy.dra_cost = dec_mult_none(bill_copy.dra_cost)
+            bill_copy.sbc_cost = dec_mult_none(bill_copy.sbc_cost)
+            bill_copy.tac_cost = dec_mult_none(bill_copy.tac_cost)
+            bill_copy.bc_cost = dec_mult_none(bill_copy.bc_cost)
+            bill_copy.ds_nysls_cost = dec_mult_none(bill_copy.ds_nysls_cost)
+            bill_copy.ds_nysst_cost = dec_mult_none(bill_copy.ds_nysst_cost)
+            bill_copy.ds_total_cost *= cost_ratio
+            bill_copy.gs_cost *= cost_ratio
+            bill_copy.ss_nysls_cost = dec_mult_none(bill_copy.ss_nysls_cost)
+            bill_copy.ss_nysst_cost = dec_mult_none(bill_copy.ss_nysst_cost)
+            bill_copy.ss_total_cost *= cost_ratio
+            bill_copy.pbc_cost = dec_mult_none(bill_copy.pbc_cost)
+            bill_copy.oca_total_cost *= cost_ratio
+
+            bill_copy.notes += " Ratio of " + str(cost_ratio) + " applied to therms and cost attributes."
+
+        return bill_copy

@@ -46,3 +46,22 @@ class MortgageBillData(SimpleServiceBillDataBase):
         return super().__str__() + "\nBalances (before payments applied): Principal: " + str(self.outs_prin) + \
             ", Escrow: " + str(self.esc_bal) + "\nPayments: Principal: " + str(self.prin_pmt) + ", Interest: " + \
             str(self.int_pmt) + ", Escrow: " + str(self.esc_pmt) + ", Other: " + str(self.other_pmt)
+
+    def copy(self, cost_ratio=None, real_estate=None, **kwargs):
+        """ see superclass docstring
+
+        Ratio applied to all attributes.
+        """
+        bill_copy = super().copy(cost_ratio=cost_ratio, real_estate=real_estate, **kwargs)
+
+        if cost_ratio is not None:
+            bill_copy.outs_prin *= cost_ratio
+            bill_copy.esc_bal *= cost_ratio
+            bill_copy.prin_pmt *= cost_ratio
+            bill_copy.int_pmt *= cost_ratio
+            bill_copy.esc_pmt *= cost_ratio
+            bill_copy.other_pmt *= cost_ratio
+
+            bill_copy.notes += " Ratio of " + str(cost_ratio) + " applied to all attributes."
+
+        return bill_copy

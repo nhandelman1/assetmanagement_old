@@ -37,13 +37,22 @@ class NG(ComplexServiceModelBase):
 
         Returns:
             NatGasBillData: with all required fields populated and as many non required fields as available populated
+
+        Raises:
+            ValueError: unable to read relevant data in bill
         """
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
                             (os.getenv("FI_NATIONALGRID_DIR") + filename), pages="all", password="11720", guess=False)
         bill_data = NatGasBillData(None, None, None, None, None, 0, None, None, None, None,
                                    None, None, None, None, None, None, None, True)
 
-        df = df_list[3]
+        df = None
+        for df_1 in df_list:
+            if "page2of3" in [x.replace(" ", "").lower() for x in df_1.columns]:
+                df = df_1
+                break
+        if df is None:
+            raise ValueError("Unable to read relevant data in bill with filename: " + filename)
         keep_cols = [c for c in df.columns if any([x in c.lower() for x in ["service", "page"]])]
         df = df[keep_cols]
         df.columns = [1, 2]
@@ -110,8 +119,12 @@ class NG(ComplexServiceModelBase):
                     bill_data.gs_cost = Decimal(str2)
                 elif "NY State and Local Surcharges" in str1 and not in_delivery_services:
                     bill_data.ss_nysls_cost = Decimal(str2)
-                elif "NY State Sales Tax" in str1 and not in_delivery_services:
-                    bill_data.ss_nysst_rate = Decimal(row_split[4]) / 100
+                elif "Sales Tax" in str1 and not in_delivery_services:
+                    if "NY State Sales Tax" in str1:
+                        bill_data.ss_nysst_rate = Decimal(row_split[4]) / 100
+                    else:
+                        bill_data.ss_nysst_rate = Decimal("0.025")
+                        bill_data.notes = "No supply services sales tax provided. Assumed to be 0.025."
                     bill_data.ss_nysst_cost = Decimal(str2)
                 elif "Total Supply Services" in str1:
                     bill_data.ss_total_cost = fmt_dec(str2)
@@ -137,17 +150,18 @@ class NG(ComplexServiceModelBase):
 
         return bill_data
 
-    def insert_service_bills_to_db(self, bill_list):
+    def insert_service_bills_to_db(self, bill_list, ignore=None):
         """ Insert monthly natural gas bills to table
 
         Args:
             bill_list (list[NatGasBillData]): natural gas bill data to insert
+            ignore (Optional[boolean]): see superclass docstring
 
         Raises:
             MySQLException: if database insert issue occurs
         """
         with MySQLAM() as mam:
-            mam.natgas_bill_data_insert(bill_list)
+            mam.natgas_bill_data_insert(bill_list, ignore=ignore)
 
     def update_service_bills_in_db_paid_date_by_id(self, bill_list):
         """ Update natural gas bills paid_date in natgas_bill_data table by id
@@ -186,21 +200,6 @@ class NG(ComplexServiceModelBase):
 
         return bill_list
 
-    def read_all_service_bills_from_db(self):
-        with MySQLAM() as mam:
-            bill_list = mam.natgas_bill_data_read()
-
-        df = pd.DataFrame()
-
-        for bill in bill_list:
-            df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
-            if bill.is_actual:
-                self.asb_dict.insert_bills(bill)
-            else:
-                self.esb_dict.insert_bills(bill)
-
-        return df.sort_values(by=["start_date", "is_actual"])
-
     def read_all_service_bills_from_db_unpaid(self):
         """ Read all natural gas bills that have a null paid date and are actual bills
 
@@ -218,6 +217,16 @@ class NG(ComplexServiceModelBase):
         self.asb_dict.insert_bills(bill_list)
 
         return bill_list
+
+    def read_service_bills_from_db_by_resppdr(self, real_estate_list=(), service_provider_list=(), paid_date_min=None,
+                                              paid_date_max=None, to_pd_df=False):
+        wheres = self.resppdr_wheres_clause(real_estate_list=real_estate_list,
+                service_provider_list=service_provider_list, paid_date_min=paid_date_min, paid_date_max=paid_date_max)
+
+        with MySQLAM() as mam:
+            bill_list = mam.natgas_bill_data_read(wheres=wheres, order_bys=["paid_date"])
+
+        return self.bills_post_read(bill_list, to_pd_df=to_pd_df)
 
     def insert_monthly_data_to_db(self, natgas_data):
         """ Insert monthly natural gas data to table
@@ -365,7 +374,8 @@ class NG(ComplexServiceModelBase):
         emb.tac_cost = emb.tac_rate * emb.total_therms
         emb.ds_nysls_rate = sum_none(amb.ds_nysls_cost) / sum_none(amb.bsc_cost, amb.next_cost, amb.over_cost,
                                                                    amb.dra_cost, amb.sbc_cost, amb.bc_cost)
-        subtotal = sum_none(emb.bsc_cost, emb.next_cost, emb.over_cost, emb.dra_cost, emb.sbc_cost, emb.bc_cost)
+        subtotal = sum_none(emb.bsc_cost, emb.next_cost, emb.over_cost, emb.dra_cost, emb.sbc_cost, emb.tac_cost,
+                            emb.bc_cost)
         emb.ds_nysls_cost = emb.ds_nysls_rate * subtotal
         emb.ds_nysst_rate = amb.ds_nysst_rate
         emb.ds_nysst_cost = emb.ds_nysst_rate * (subtotal + emb.ds_nysls_cost)
