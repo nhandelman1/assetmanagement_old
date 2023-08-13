@@ -55,9 +55,12 @@ class SimpleServiceModel(SimpleServiceModelBase):
             filename, full_path = to_fn(int(filename.split("_")[-1][:-4]) + 1)
 
         df = bill.to_pd_df()
-        df = df[["address", "provider", "start_date", "end_date", "total_cost", "paid_date", "notes"]]
+        df = df[["address", "provider", "start_date", "end_date", "total_cost", "tax_rel_cost", "paid_date", "notes"]]
         for col in ["address", "provider"]:
             df[col] = df[col].map(lambda x: str(x.value))
+        if df.loc[0, "tax_rel_cost"] == 0:
+            # conform to required format *.XX
+            df.loc[0, "tax_rel_cost"] = "0.00"
 
         df.to_csv(full_path, index=False)
 
@@ -71,6 +74,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
             provider: see self.valid_providers() then Database.POPO.ServiceProvider.ServiceProviderEnum for valid values
             dates: YYYY-MM-DD format
             total cost: *.XX format
+            tax related cost: *.XX format
         Returned instance of SimpleServiceBillData is added to self.asb_dict
 
         Args:
@@ -96,11 +100,16 @@ class SimpleServiceModel(SimpleServiceModelBase):
         start_date = datetime.datetime.strptime(df.loc[0, "start_date"], "%Y-%m-%d").date()
         end_date = datetime.datetime.strptime(df.loc[0, "end_date"], "%Y-%m-%d").date()
         total_cost = Decimal(df.loc[0, "total_cost"])
+        try:
+            tax_rel_cost = df.loc[0, "tax_rel_cost"]
+            tax_rel_cost = total_cost if pd.isnull(tax_rel_cost) else Decimal(tax_rel_cost)
+        except KeyError:
+            tax_rel_cost = total_cost
         paid_date = df.loc[0, "paid_date"]
         paid_date = None if pd.isnull(paid_date) \
             else datetime.datetime.strptime(df.loc[0, "paid_date"], "%Y-%m-%d").date()
         notes = None if pd.isnull(df.loc[0, "notes"]) else df.loc[0, "notes"]
-        ssbd = SimpleServiceBillData(real_estate, service_provider, start_date, end_date, total_cost,
+        ssbd = SimpleServiceBillData(real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost,
                                      paid_date=paid_date, notes=notes)
         self.asb_dict.insert_bills(ssbd)
 
@@ -172,3 +181,22 @@ class SimpleServiceModel(SimpleServiceModelBase):
             bill_list = mam.simple_bill_data_read(wheres=wheres, order_bys=["paid_date"])
 
         return self.bills_post_read(bill_list, to_pd_df=to_pd_df)
+
+    def read_one_bill(self):
+        with MySQLAM() as mam:
+            bill_list = mam.simple_bill_data_read(limit=1)
+
+        if len(bill_list) == 0:
+            raise ValueError("No simple bills found. Check that table has at least one record")
+
+        return bill_list[0]
+
+    def set_default_tax_related_cost(self, bill_tax_related_cost_list):
+        bill_list = []
+        for bill, tax_related_cost in bill_tax_related_cost_list:
+            if tax_related_cost.is_nan():
+                bill.tax_rel_cost = bill.total_cost if bill.real_estate.bill_tax_related else Decimal(0)
+            else:
+                bill.tax_rel_cost = tax_related_cost
+            bill_list.append(bill)
+        return bill_list

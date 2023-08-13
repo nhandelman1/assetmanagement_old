@@ -2,7 +2,6 @@ import datetime
 import os
 import pathlib
 import tabula
-import pandas as pd
 from typing import Optional, Union
 from decimal import Decimal
 from Database.MySQLAM import MySQLAM
@@ -40,7 +39,7 @@ class PSEG(ComplexServiceModelBase):
         """
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
                                   (os.getenv("FI_PSEG_DIR") + filename), pages="all", password="11720", guess=False)
-        bill_data = ElectricBillData(None, None, None, None, None, 0, 0, None, None, None, None, None, True)
+        bill_data = ElectricBillData(None, None, None, None, None, 0, 0, None, None, None, None, None, None, True)
 
         # get start date and end date from 1st page
         srs = df_list[0]
@@ -224,6 +223,25 @@ class PSEG(ComplexServiceModelBase):
 
         return self.bills_post_read(bill_list, to_pd_df=to_pd_df)
 
+    def read_one_bill(self):
+        with MySQLAM() as mam:
+            bill_list = mam.electric_bill_data_read(limit=1)
+
+        if len(bill_list) == 0:
+            raise ValueError("No electric bills found. Check that table has at least one record")
+
+        return bill_list[0]
+
+    def set_default_tax_related_cost(self, bill_tax_related_cost_list):
+        bill_list = []
+        for bill, tax_related_cost in bill_tax_related_cost_list:
+            if tax_related_cost.is_nan():
+                bill.tax_rel_cost = bill.total_cost if bill.real_estate.bill_tax_related else Decimal(0)
+            else:
+                bill.tax_rel_cost = tax_related_cost
+            bill_list.append(bill)
+        return bill_list
+
     def insert_monthly_data_to_db(self, electric_data):
         """ Insert monthly electric data to table
 
@@ -310,7 +328,7 @@ class PSEG(ComplexServiceModelBase):
         amb = amb[0]
 
         bill_data = ElectricBillData(amb.real_estate, amb.service_provider, amb.start_date, amb.end_date, None, 0, 0,
-                                     None, amb.bs_rate, amb.bs_cost, None, None, False)
+                                     None, amb.bs_rate, amb.bs_cost, None, None, None, False)
 
         self.esb_dict.insert_bills(bill_data)
 
@@ -451,6 +469,7 @@ class PSEG(ComplexServiceModelBase):
             ElectricBillData: emb with total cost estimated
         """
         emb.total_cost = emb.dsc_total_cost + emb.psc_total_cost + emb.toc_total_cost
+        emb = self.set_default_tax_related_cost([(emb, Decimal("NaN"))])
 
         return emb
 

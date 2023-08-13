@@ -187,12 +187,44 @@ class SimpleServiceModelBase(ABC):
         Returns:
             Union[list[SimpleServiceBillDataBase], pd.DataFrame]:
                 list: subclass instances. empty if no bills matching parameters. ordered by paid date increasing
-                dataframe: with all bill data ordered by start date decreasing
+                dataframe: with all bill data ordered by start date decreasing. empty dataframe will have column headers
 
         Raises:
             MySQLException: if issue with database read
         """
         raise NotImplementedError("read_service_bills_from_db_by_resppdr() not implemented by subclass")
+
+    @abstractmethod
+    def read_one_bill(self):
+        """ Read one bill from database table specified by subclass
+
+        Returns:
+            SimpleServiceBillDataBase: subclass instance. the one bill read from table
+
+        Raises:
+            ValueError: if table is empty
+        """
+        raise NotImplementedError("read_one_bill() not implemented by subclass")
+
+    @abstractmethod
+    def set_default_tax_related_cost(self, bill_tax_related_cost_list):
+        """ Set tax_rel_cost in each bill with the provided tax related cost or use default value
+
+        Overriding functions should do the following:
+            If a number Decimal is provided, set the bill's tax_rel_cost to that value.
+            If Decimal(NaN) is provided, set the bill's tax_rel_cost depending on the bill's
+                real_estate.bill_tax_related value
+
+        Args:
+            bill_tax_related_cost_list (list[tuple[SimpleServiceBillDataBase, Decimal]]): sub tuples are 2-tuples where
+                the first element is the bill and the second element is the tax related cost of the bill or Decimal(NaN)
+                to use default tax related cost.
+
+        Returns:
+            list[SimpleServiceBillDataBase]: subclass instances. tax_rel_cost in each bill is set as described. bills
+                are returned in same order as in bill_tax_related_cost_list
+        """
+        raise NotImplementedError("set_default_tax_related_cost() not implemented by subclass")
 
     @staticmethod
     def resppdr_wheres_clause(real_estate_list=(), service_provider_list=(), paid_date_min=None,
@@ -225,12 +257,14 @@ class SimpleServiceModelBase(ABC):
 
         return wheres
 
-    def bills_post_read(self, bill_list, to_pd_df=False):
+    def bills_post_read(self, bill_list, to_pd_df=False, **kwargs):
         """ Convenience function to save bill_list to model and convert bill_list to dataframe if specified
 
         Args:
             bill_list (list[SimpleServiceBillDataBase]): subclass instances
-            to_pd_df (boolean): True to return data as a dataframe. Default False to return bill_list unaltered
+            to_pd_df (boolean): True to return data as a dataframe with column headers (even if bill_list is empty).
+                Default False to return bill_list unaltered
+            kwargs: see SimpleServiceBillDataBase.to_pd_df(kwargs) (and subclasses)
 
         Returns:
             Union[list[SimpleServiceBillDataBase], pd.DataFrame]:
@@ -240,12 +274,16 @@ class SimpleServiceModelBase(ABC):
         self.asb_dict.insert_bills(bill_list)
 
         if to_pd_df:
-            df = pd.DataFrame()
+            if len(bill_list) == 0:
+                df = self.read_one_bill().to_pd_df(**kwargs).head(0)
+            else:
+                df = pd.DataFrame()
+                for bill in bill_list:
+                    df = pd.concat([df, bill.to_pd_df(**kwargs)], ignore_index=True)
 
-            for bill in bill_list:
-                df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
+                df = df.sort_values(by=["start_date"])
 
-            return df.sort_values(by=["start_date"])
+            return df
         else:
             return bill_list
 

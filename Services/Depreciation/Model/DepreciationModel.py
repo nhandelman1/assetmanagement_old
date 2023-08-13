@@ -53,7 +53,7 @@ class DepreciationModel(SimpleServiceModelBase):
 
         df = bill.to_pd_df(rpv_prepend=True)
         df = df[["address", "provider", "item", "purchase_date", "start_date", "end_date", "period_usage_pct",
-                 "total_cost", "paid_date", "notes"]]
+                 "total_cost", "tax_rel_cost", "paid_date", "notes"]]
         for col in ["address", "provider"]:
             df[col] = df[col].map(lambda x: str(x.value))
 
@@ -71,6 +71,7 @@ class DepreciationModel(SimpleServiceModelBase):
             dates: YYYY-MM-DD format
             period_usage_pct: 0.00 to 100.00 inclusive
             total cost: *.XX format
+            tax related cost: *.XX format
         Returned instance of DepreciationBillData is added to self.asb_dict
 
         Args:
@@ -106,13 +107,15 @@ class DepreciationModel(SimpleServiceModelBase):
         end_date = datetime.datetime.strptime(df.loc[0, "end_date"], "%Y-%m-%d").date()
         period_usage_pct = df.loc[0, "period_usage_pct"]
         total_cost = Decimal(df.loc[0, "total_cost"])
+        tax_rel_cost = df.loc[0, "tax_rel_cost"]
+        tax_rel_cost = total_cost if pd.isnull(tax_rel_cost) else Decimal(tax_rel_cost)
         paid_date = df.loc[0, "paid_date"]
         paid_date = None if pd.isnull(paid_date) \
             else datetime.datetime.strptime(df.loc[0, "paid_date"], "%Y-%m-%d").date()
         notes = None if pd.isnull(df.loc[0, "notes"]) else df.loc[0, "notes"]
 
         dbd = DepreciationBillData(real_estate, service_provider, real_property_values, start_date, end_date,
-                                   period_usage_pct, total_cost, paid_date=paid_date, notes=notes)
+                                   period_usage_pct, total_cost, tax_rel_cost, paid_date=paid_date, notes=notes)
         self.asb_dict.insert_bills(dbd)
 
         return dbd
@@ -182,7 +185,25 @@ class DepreciationModel(SimpleServiceModelBase):
         with MySQLAM() as mam:
             bill_list = mam.depreciation_bill_data_read(wheres=wheres, order_bys=["paid_date"])
 
-        return self.bills_post_read(bill_list, to_pd_df=to_pd_df)
+        return self.bills_post_read(bill_list, to_pd_df=to_pd_df, rpv_prepend=True)
+
+    def read_one_bill(self):
+        with MySQLAM() as mam:
+            bill_list = mam.depreciation_bill_data_read(limit=1)
+
+        if len(bill_list) == 0:
+            raise ValueError("No depreciation bills found. Check that table has at least one record")
+
+        return bill_list[0]
+
+    def set_default_tax_related_cost(self, bill_tax_related_cost_list):
+        bill_list = []
+        for bill, tax_related_cost in bill_tax_related_cost_list:
+            # depreciation is always a tax related cost so default tax related cost is always total cost. no need to
+            # consider whether bills for the real estate in bill are typically tax related or not
+            bill.tax_rel_cost = bill.total_cost if tax_related_cost.is_nan() else tax_related_cost
+            bill_list.append(bill)
+        return bill_list
 
     def read_real_property_value_by_reipd(self, real_estate, rpv_item, purchase_date):
         """ Read real property value from real_property_values table by real estate, item and purchase date
@@ -280,8 +301,10 @@ class DepreciationModel(SimpleServiceModelBase):
                              " Full period probably less than a year."
 
                 bill_list.append(DepreciationBillData(real_estate, service_provider, rpv, datetime.date(year, 1, 1),
-                                                      datetime.date(year, 12, 31), Decimal(100), dep_for_year,
+                                                      datetime.date(year, 12, 31), Decimal(100), dep_for_year, None,
                                                       paid_date=datetime.date(year, 12, 31), notes=notes))
+
+        bill_list = self.set_default_tax_related_cost([(bill, Decimal("NaN")) for bill in bill_list])
 
         return bill_list, nd_list
 

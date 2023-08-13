@@ -8,16 +8,14 @@ select * from real_estate;
 select * from service_provider;
 select * from real_property_values;
 select * from mysunpower_hourly_data order by dt desc;
-select * from electric_bill_data;
+select * from electric_bill_data order by real_estate_id, service_provider_id, start_date;
 select * from electric_data;
 select * from estimate_notes order by service_provider_id, note_order;
-select start_date, end_date from natgas_bill_data where is_actual=1;
-select * from natgas_bill_data;
-select * from natgas_bill_data where start_date = '2023-03-31';
+select * from natgas_bill_data order by real_estate_id, service_provider_id, start_date;
 select * from natgas_data;
-select * from simple_bill_data;
+select * from simple_bill_data order by real_estate_id, service_provider_id, start_date;
 select * from solar_bill_data;
-select * from mortgage_bill_data;
+select * from mortgage_bill_data order by real_estate_id, service_provider_id, start_date;
 select * from depreciation_bill_data;
 
 insert into estimate_notes (real_estate_id, provider, note_type, note, note_order) values 

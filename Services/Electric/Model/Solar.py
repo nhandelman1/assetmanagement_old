@@ -99,8 +99,10 @@ class Solar(SimpleServiceModelBase):
         notes = None if pd.isnull(df.loc[0, "notes"]) else df.loc[0, "notes"]
 
         sbd = SolarBillData(real_estate, service_provider, start_date, end_date, kwh_dict["solar_kwh"],
-                            kwh_dict["home_kwh"], None, actual_costs, prev_bill[0].oc_eom_basis, oc_pnl_pct, None, None,
-                            paid_date=paid_date, notes=notes, calc_variables=True)
+                            kwh_dict["home_kwh"], None, None, actual_costs, prev_bill[0].oc_eom_basis, oc_pnl_pct,
+                            None, None, paid_date=paid_date, notes=notes, calc_variables=True)
+        sbd = self.set_default_tax_related_cost([(sbd, Decimal("NaN"))])[0]
+
         self.asb_dict.insert_bills(sbd)
 
         return sbd
@@ -190,6 +192,24 @@ class Solar(SimpleServiceModelBase):
             bill_list = mam.solar_bill_data_read(wheres=wheres, order_bys=["paid_date"])
 
         return self.bills_post_read(bill_list, to_pd_df=to_pd_df)
+
+    def read_one_bill(self):
+        with MySQLAM() as mam:
+            bill_list = mam.solar_bill_data_read(limit=1)
+
+        if len(bill_list) == 0:
+            raise ValueError("No solar bills found. Check that table has at least one record")
+
+        return bill_list[0]
+
+    def set_default_tax_related_cost(self, bill_tax_related_cost_list):
+        bill_list = []
+        for bill, tax_related_cost in bill_tax_related_cost_list:
+            # solar "bills" aren't real bills so default tax related cost is always 0. no need to consider whether bills
+            # for the real estate in bill are typically tax related or not
+            bill.tax_rel_cost = Decimal(0) if tax_related_cost.is_nan() else tax_related_cost
+            bill_list.append(bill)
+        return bill_list
 
     def process_sunpower_hourly_file(self, filename):
         """ Open, process and return mySunpower hourly file

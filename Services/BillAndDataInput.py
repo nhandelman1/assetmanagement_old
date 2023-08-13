@@ -74,10 +74,12 @@ class BillAndDataInput:
         if opt == "1":
             re_dict = self.simple_model.read_all_real_estate()
             sp_dict = self.simple_model.read_valid_service_providers()
-            bill_data = self.simple_view.input_bill_data(re_dict, sp_dict)
+            bill_data = self.simple_view.input_bill_data(re_dict, sp_dict,
+                                                         self.simple_model.set_default_tax_related_cost)
             filename = self.simple_model.save_to_file(bill_data)
         else:  # opt == "2"
             filename = self.simple_view.input_read_new_bill()
+
         bill_data = self.simple_model.process_service_bill(filename)
         self.simple_model.insert_service_bills_to_db([bill_data])
         bill_list = self.simple_model.read_service_bill_from_db_by_repsd(
@@ -103,6 +105,8 @@ class BillAndDataInput:
             df = self.solar_model.process_sunpower_hourly_file(hourly_filename)
             self.solar_model.insert_sunpower_hourly_data_to_db(df)
         bill_data = self.solar_model.process_service_bill(bill_filename)
+        bill_trc_list = self.solar_view.input_tax_related_cost([bill_data])
+        bill_data = self.solar_model.set_default_tax_related_cost(bill_trc_list)[0]
         self.solar_model.insert_service_bills_to_db([bill_data])
 
         bill_list = self.solar_model.read_service_bill_from_db_by_repsd(
@@ -126,6 +130,8 @@ class BillAndDataInput:
         if opt == "1":
             filename = view.input_read_new_bill()
             bill_data = model.process_service_bill(filename)
+            bill_trc_list = view.input_tax_related_cost([bill_data])
+            bill_data = model.set_default_tax_related_cost(bill_trc_list)[0]
             model.insert_service_bills_to_db([bill_data])
             real_estate = bill_data.real_estate
             service_provider = bill_data.service_provider
@@ -259,6 +265,8 @@ class BillAndDataInput:
         """
         filename = self.mortgage_view.input_read_new_bill()
         bill_data = self.mortgage_model.process_service_bill(filename)
+        bill_trc_list = self.mortgage_view.input_tax_related_cost([bill_data])
+        bill_data = self.mortgage_model.set_default_tax_related_cost(bill_trc_list)[0]
         self.mortgage_model.insert_service_bills_to_db([bill_data])
         bill_list = self.mortgage_model.read_service_bill_from_db_by_repsd(
             bill_data.real_estate, bill_data.service_provider, bill_data.start_date)
@@ -334,6 +342,9 @@ class BillAndDataInput:
         # create bills for depreciable items and make a list of non depreciable items. period usage considered later
         bill_list, rpv_list = self.dep_model.create_bills(real_estate, service_provider, year)
 
+        bill_trc_list = self.dep_view.input_tax_related_cost(bill_list)
+        bill_list = self.dep_model.set_default_tax_related_cost(bill_trc_list)
+
         # enter period usage for each depreciable item
         bill_list = self.dep_view.input_period_usages(bill_list)
 
@@ -398,18 +409,19 @@ class BillAndDataInput:
                                                        pre_str="Load/Create partial bills for this service provider. ")
                     service_provider = sp_dict[sp_id]
 
-                    year = view.input_paid_year(pre_str="Load/Create partial bills for this year. ")
+                    year = view.input_paid_year(pre_str="\nLoad/Create partial bills for this year. ")
 
                     orig_bill_list = model.read_service_bills_from_db_by_resppdr(
                         real_estate_list=[primary_real_estate], service_provider_list=[service_provider],
                         paid_date_min=datetime.date(year, 1, 1), paid_date_max=datetime.date(year, 12, 31))
-
                     bill_ratio_list = view.input_partial_bill_portion(orig_bill_list)
+                    new_bill_list = [bill.copy(cost_ratio=ratio, real_estate=secondary_real_estate)
+                                     for bill, ratio in bill_ratio_list if not ratio.is_nan()]
 
-                    copy_bill_list = [bill.copy(cost_ratio=ratio, real_estate=secondary_real_estate)
-                                      for bill, ratio in bill_ratio_list if not ratio.is_nan()]
+                    bill_tax_related_cost_list = view.input_tax_related_cost(new_bill_list)
+                    new_bill_list = model.set_default_tax_related_cost(bill_tax_related_cost_list)
 
-                    model.insert_service_bills_to_db(copy_bill_list, ignore=True)
+                    model.insert_service_bills_to_db(new_bill_list, ignore=True)
 
                     model.clear_model()
                 elif opt == "0":

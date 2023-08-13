@@ -51,7 +51,8 @@ class RealEstate(DataFrameable):
         see init docstring (db_dict not kept as an attribute)
 
     """
-    def __init__(self, address, street_num, street_name, city, state, zip_code, apt=None, db_dict=None):
+    def __init__(self, address, street_num, street_name, city, state, zip_code, bill_tax_related, apt=None,
+                 db_dict=None):
         """ init function
 
         Args:
@@ -61,6 +62,8 @@ class RealEstate(DataFrameable):
             city (str): city
             state (str): 2 letter state code
             zip_code (str): 5 letter zip code
+            bill_tax_related (boolean): True if bills associated with this real estate typically (but not necessarily)
+                affect taxes in some way. False if they typically (but not necessarily) do not.
             apt (Optional[str]): apt name or number
             db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
                 overwrite an argument provided explicitly through the argument variable
@@ -73,11 +76,13 @@ class RealEstate(DataFrameable):
         self.state = state
         self.zip_code = zip_code
         self.apt = apt
+        self.bill_tax_related = bill_tax_related
 
         if isinstance(db_dict, dict):
             self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
             if isinstance(self.address, str):
                 self.address = Address(self.address)
+            self.bill_tax_related = bool(self.bill_tax_related)
 
     def __str__(self):
         """ __str__ override
@@ -85,7 +90,7 @@ class RealEstate(DataFrameable):
         Returns:
             str: self.address.value
         """
-        return str(self.address.value)
+        return str(self.address.value) + ", Bill Tax Related: " + str(self.bill_tax_related)
 
     def to_pd_df(self, deprivatize=True, **kwargs):
         """ see superclass docstring

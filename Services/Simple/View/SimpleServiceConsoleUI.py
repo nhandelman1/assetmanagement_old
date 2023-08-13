@@ -1,6 +1,6 @@
 import colorama
-import decimal
 import os
+from decimal import Decimal
 from Services.View.SimpleConsoleUIBase import SimpleConsoleUIBase
 from Services.Simple.View.SimpleViewBase import SimpleViewBase
 from Database.POPO.SimpleServiceBillData import SimpleServiceBillData
@@ -19,6 +19,9 @@ class SimpleServiceConsoleUI(SimpleConsoleUIBase, SimpleViewBase):
 
         return filename
 
+    def input_tax_related_cost(self, bill_list):
+        return self.input_tax_related_cost_helper(bill_list, "Simple", "total", "0")
+
     def input_choose_input_data_or_read_bill(self):
         while True:
             opt = input("\nEnter '1' to input bill data manually or '2' to read data from file: ")
@@ -31,35 +34,23 @@ class SimpleServiceConsoleUI(SimpleConsoleUIBase, SimpleViewBase):
 
         return opt
 
-    def input_bill_data(self, re_dict, sp_dict):
+    def input_bill_data(self, re_dict, sp_dict, set_default_tax_related_cost_func):
         re_id = self.input_select_real_estate(re_dict)
+        real_estate = re_dict[re_id]
         sp_id = self.input_select_service_provider(sp_dict)
         start_date = self.input_bill_date()
         end_date = self.input_bill_date(is_start=False)
 
-        while True:
-            total_cost = input("\nEnter total cost (income, credit, rebates, etc. are negative) (*.XX format): ")
+        print_str = "Enter total cost (income, credit, rebates, etc. are negative)."
+        total_cost = Decimal(self.input_blank_skip_or_dollar_decimal(print_str, False, False))
 
-            try:
-                decimal.Decimal(total_cost)
-            except decimal.InvalidOperation:
-                print(colorama.Fore.RED, "Invalid format. Try again.")
-                print(colorama.Style.RESET_ALL)
-                continue
+        bill = SimpleServiceBillData(real_estate, sp_dict[sp_id], start_date, end_date, total_cost, None)
 
-            tc_split = total_cost.split(".")
-            if len(tc_split) != 2 or len(tc_split[1]) != 2:
-                print(colorama.Fore.RED, "Must have 2 decimal places. Try again.")
-                print(colorama.Style.RESET_ALL)
-                continue
-
-            break
+        bill_trc_list = self.input_tax_related_cost([bill])
+        bill = set_default_tax_related_cost_func(bill_trc_list)[0]
 
         notes = input("\nEnter any notes for this bill (leave blank for no notes): ")
-        notes = None if notes == "" else notes
-
-        bill = SimpleServiceBillData(re_dict[re_id], sp_dict[sp_id], start_date, end_date, decimal.Decimal(total_cost),
-                                     notes=notes)
+        bill.notes = None if notes == "" else notes
 
         bill_list = self.input_paid_dates([bill])
 

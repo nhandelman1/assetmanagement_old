@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from decimal import Decimal
 from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
 from Database.POPO.DepreciationBillData import DepreciationBillData
 
@@ -17,6 +18,19 @@ class DepreciationViewBase(SimpleServiceViewBase):
             str: name of file to read
         """
         raise NotImplementedError("DepreciationViewBase does not implement input_read_new_bill()")
+
+    def input_tax_related_cost(self, bill_list):
+        """ see superclass method docstring
+
+        Depreciation bill tax related cost is always default value
+
+        Args:
+            see overriden method docstring
+
+        Returns:
+            see overriden method docstring
+        """
+        return [(bill, Decimal("NaN")) for bill in bill_list]
 
     def input_depreciation_year(self):
         """ ask for year in which to calculate all depreciation bills

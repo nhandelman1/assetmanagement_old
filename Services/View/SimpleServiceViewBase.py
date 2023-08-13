@@ -118,7 +118,7 @@ class SimpleServiceViewBase(ABC):
         No bill in bill_list will be altered
 
         Args:
-            bill_list (list[SimpleServiceBillDataBase]): bills being asked about
+            bill_list (list[SimpleServiceBillDataBase]): subclass instances. bills being asked about
 
         Returns:
             list[tuple[SimpleServiceBillDataBase, Decimal]]: sub tuples are 2-tuples where the first element is the
@@ -126,3 +126,27 @@ class SimpleServiceViewBase(ABC):
                 Decimal(NaN) to not create a copy
         """
         raise NotImplementedError("input_partial_bill_portion() not implemented by subclass")
+
+    @abstractmethod
+    def input_tax_related_cost(self, bill_list):
+        """ Ask user to input tax related cost or use default value determined by subclass for each bill in bill_list
+
+        If all bills in bill_list have the same real estate:
+            Display all bills in bill_list.
+            User asked to enter a tax related cost that will apply to all bills (either a specific value or blank to use
+                default value as determined by subclass) or 'skip' to enter tax related cost per bill
+            If 'skip', user asked to enter a tax related cost per bill, either a specific value or blank to use default
+                value as determined by subclass
+        If at least one bill has a different real estate:
+            User asked to enter a tax related cost per bill, either a specific value or blank to use default value as
+                determined by subclass
+
+        Args:
+            bill_list (list[SimpleServiceBillDataBase]): subclass instances. bills being asked about
+
+        Returns:
+            list[tuple[SimpleServiceBillDataBase, Decimal]]: sub tuples are 2-tuples where the first element is the
+                bill and the second element is the tax related cost of the bill or Decimal(NaN) to use default tax
+                related cost. bills are unaltered and in the same order as in bill_list
+        """
+        raise NotImplementedError("input_tax_related_cost() not implemented by subclass")

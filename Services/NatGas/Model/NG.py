@@ -43,8 +43,8 @@ class NG(ComplexServiceModelBase):
         """
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
                             (os.getenv("FI_NATIONALGRID_DIR") + filename), pages="all", password="11720", guess=False)
-        bill_data = NatGasBillData(None, None, None, None, None, 0, None, None, None, None,
-                                   None, None, None, None, None, None, None, True)
+        bill_data = NatGasBillData(None, None, None, None, None, 0, None, None, None, None, None, None, None, None,
+                                   None, None, None, None, True)
 
         df = None
         for df_1 in df_list:
@@ -228,6 +228,25 @@ class NG(ComplexServiceModelBase):
 
         return self.bills_post_read(bill_list, to_pd_df=to_pd_df)
 
+    def read_one_bill(self):
+        with MySQLAM() as mam:
+            bill_list = mam.natgas_bill_data_read(limit=1)
+
+        if len(bill_list) == 0:
+            raise ValueError("No natural gas bills found. Check that table has at least one record")
+
+        return bill_list[0]
+
+    def set_default_tax_related_cost(self, bill_tax_related_cost_list):
+        bill_list = []
+        for bill, tax_related_cost in bill_tax_related_cost_list:
+            if tax_related_cost.is_nan():
+                bill.tax_rel_cost = bill.total_cost if bill.real_estate.bill_tax_related else Decimal(0)
+            else:
+                bill.tax_rel_cost = tax_related_cost
+            bill_list.append(bill)
+        return bill_list
+
     def insert_monthly_data_to_db(self, natgas_data):
         """ Insert monthly natural gas data to table
 
@@ -316,7 +335,7 @@ class NG(ComplexServiceModelBase):
         amb = amb[0]
 
         bill_data = NatGasBillData(amb.real_estate, amb.service_provider, amb.start_date, amb.end_date,
-                                   amb.total_therms, None, None, amb.bsc_therms, amb.bsc_cost, None, amb.next_rate,
+                                   amb.total_therms, None, None, None, amb.bsc_therms, amb.bsc_cost, None, amb.next_rate,
                                    None, None, amb.gs_rate, None, None, None, False, dra_rate=amb.dra_rate,
                                    sbc_rate=amb.sbc_rate, tac_rate=amb.tac_rate, bc_cost=amb.bc_cost,
                                    ds_nysst_rate=amb.ds_nysst_rate, ss_nysst_rate=amb.ss_nysst_rate,
@@ -440,6 +459,7 @@ class NG(ComplexServiceModelBase):
             NatGasBillData: emb with total cost estimated
         """
         emb.total_cost = emb.ds_total_cost + emb.ss_total_cost + emb.oca_total_cost
+        emb = self.set_default_tax_related_cost([(emb, Decimal("NaN"))])[0]
 
         return emb
 

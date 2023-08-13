@@ -16,16 +16,16 @@ class ComplexServiceBillDataBase(SimpleServiceBillDataBase):
     """
 
     @abstractmethod
-    def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, is_actual, paid_date=None,
-                 notes=None):
+    def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost, is_actual,
+                 paid_date=None, notes=None):
         """ init function
 
         Args:
             see super class init docstring
             is_actual (boolean): is this data from an actual bill (True) or estimated (False)
         """
-        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, paid_date=paid_date,
-                         notes=notes)
+        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost,
+                         paid_date=paid_date, notes=notes)
 
         self.is_actual = is_actual
 
@@ -51,5 +51,6 @@ class ComplexServiceBillDataBase(SimpleServiceBillDataBase):
         if isinstance(db_dict, dict):
             # use this method of setting attributes instead of __dict__.update to property set private attributes
             for key, value in db_dict.items():
-                setattr(self, key, value)
+                if hasattr(self, key):
+                    setattr(self, key, value)
             self.is_actual = bool(self.is_actual)

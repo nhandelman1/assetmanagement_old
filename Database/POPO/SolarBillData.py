@@ -16,8 +16,8 @@ class SolarBillData(SimpleServiceBillDataBase):
         see init docstring for attributes (db_dict is not kept as an attribute)
     """
     def __init__(self, real_estate, service_provider, start_date, end_date, solar_kwh, home_kwh, total_cost,
-                 actual_costs, oc_bom_basis, oc_pnl_pct, oc_pnl, oc_eom_basis, paid_date=None, notes=None, db_dict=None,
-                 calc_variables=None):
+                 tax_rel_cost, actual_costs, oc_bom_basis, oc_pnl_pct, oc_pnl, oc_eom_basis, paid_date=None, notes=None,
+                 db_dict=None, calc_variables=None):
         """ init function
 
         Args:
@@ -36,8 +36,8 @@ class SolarBillData(SimpleServiceBillDataBase):
             calc_variables (Optional[boolean]): True to call self.calc_variables() as the last operation in this
                 function. Default None or False to not call self.calc_variables()
         """
-        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, paid_date=paid_date,
-                         notes=notes)
+        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost,
+                         paid_date=paid_date, notes=notes)
         self.solar_kwh = solar_kwh
         self.home_kwh = home_kwh
         self.actual_costs = actual_costs

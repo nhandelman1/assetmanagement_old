@@ -22,6 +22,9 @@ class PSEGConsoleUI(ComplexConsoleUIBase, PSEGViewBase):
 
         return filename
 
+    def input_tax_related_cost(self, bill_list):
+        return self.input_tax_related_cost_helper(bill_list, "Electric", "total", "0")
+
     def display_bills(self, bill_list):
         print("\n********** Electric Bills **********\n")
         for i, bill in enumerate(bill_list):

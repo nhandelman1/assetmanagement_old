@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from decimal import Decimal
 from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
 
 
@@ -15,6 +16,19 @@ class SolarViewBase(SimpleServiceViewBase):
         Dates are start date and end date
         """
         raise NotImplementedError("display_preprocess_warning() not implemented by subclass")
+
+    def input_tax_related_cost(self, bill_list):
+        """ see superclass method docstring
+
+        Solar bill tax related cost is always default value
+
+        Args:
+            see overriden method docstring
+
+        Returns:
+            see overriden method docstring
+        """
+        return [(bill, Decimal("NaN")) for bill in bill_list]
 
     @abstractmethod
     def input_read_new_hourly_data_file_or_skip(self, start_date, end_date):

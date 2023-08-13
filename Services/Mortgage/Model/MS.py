@@ -40,7 +40,7 @@ class MS(SimpleServiceModelBase):
         Returns:
             MortgageBillData: with all required fields populated and as many non required fields as available populated
         """
-        bill_data = MortgageBillData(None, None, None, None, None, None, None, None, None, None, None)
+        bill_data = MortgageBillData(None, None, None, None, None, None, None, None, None, None, None, None)
 
         def fmt_dec(str_val):
             return Decimal(str_val.replace("$", "").replace(" ", "").replace(",", ""))
@@ -188,3 +188,22 @@ class MS(SimpleServiceModelBase):
             bill_list = mam.mortgage_bill_data_read(wheres=wheres, order_bys=["paid_date"])
 
         return self.bills_post_read(bill_list, to_pd_df=to_pd_df)
+
+    def read_one_bill(self):
+        with MySQLAM() as mam:
+            bill_list = mam.mortgage_bill_data_read(limit=1)
+
+        if len(bill_list) == 0:
+            raise ValueError("No mortgage bills found. Check that table has at least one record")
+
+        return bill_list[0]
+
+    def set_default_tax_related_cost(self, bill_tax_related_cost_list):
+        bill_list = []
+        for bill, tax_related_cost in bill_tax_related_cost_list:
+            if tax_related_cost.is_nan():
+                bill.tax_rel_cost = bill.int_pmt if bill.real_estate.bill_tax_related else Decimal(0)
+            else:
+                bill.tax_rel_cost = tax_related_cost
+            bill_list.append(bill)
+        return bill_list

@@ -65,7 +65,8 @@ class UtilityDataBase(DictInsertable, ABC):
         if isinstance(db_dict, dict):
             # use this method of setting attributes instead of __dict__.update to property set private attributes
             for key, value in db_dict.items():
-                setattr(self, key, value)
+                if hasattr(self, key):
+                    setattr(self, key, value)
 
     def to_insert_dict(self):
         """ Convert class to dict

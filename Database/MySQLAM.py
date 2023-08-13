@@ -860,7 +860,7 @@ class MySQLAM(MySQLBase):
 
         dict_list = self.execute_fetch(query, params=params)
 
-        return [RealEstate(None, None, None, None, None, None, db_dict=d) for d in dict_list]
+        return [RealEstate(None, None, None, None, None, None, None, db_dict=d) for d in dict_list]
 
     def service_provider_read(self, fields="*", wheres=(), order_bys=()):
         """ Read fields from service_provider table
@@ -981,7 +981,7 @@ class MySQLAM(MySQLBase):
 
         return dict_list
 
-    def solar_bill_data_read(self, wheres=(), order_bys=()):
+    def solar_bill_data_read(self, wheres=(), order_bys=(), limit=None):
         """ Read all fields from solar_bill_data table
 
         Args:
@@ -993,7 +993,7 @@ class MySQLAM(MySQLBase):
         Raises:
             MySQLException: if database read issue occurs
         """
-        qw = QueryWriter("solar_bill_data", wheres=wheres, order_bys=order_bys)
+        qw = QueryWriter("solar_bill_data", wheres=wheres, order_bys=order_bys, limit=limit)
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
@@ -1001,7 +1001,7 @@ class MySQLAM(MySQLBase):
 
         bill_list = []
         for d in dict_list:
-            bill_list.append(SolarBillData(None, None, None, None, None, None, None, None, None, None, None, None,
+            bill_list.append(SolarBillData(None, None, None, None, None, None, None, None, None, None, None, None, None,
                                            db_dict=d))
 
         return bill_list
@@ -1044,7 +1044,7 @@ class MySQLAM(MySQLBase):
 
         self.execute_commit(query, params_list=final_params, execute_many=True)
 
-    def electric_bill_data_read(self, wheres=(), order_bys=()):
+    def electric_bill_data_read(self, wheres=(), order_bys=(), limit=None):
         """ Read all fields from electric_bill_data table
 
         Args:
@@ -1056,7 +1056,7 @@ class MySQLAM(MySQLBase):
         Raises:
             MySQLException: if database read issue occurs
         """
-        qw = QueryWriter("electric_bill_data", wheres=wheres, order_bys=order_bys)
+        qw = QueryWriter("electric_bill_data", wheres=wheres, order_bys=order_bys, limit=limit)
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
@@ -1065,7 +1065,7 @@ class MySQLAM(MySQLBase):
         bill_list = []
         for d in dict_list:
             bill_list.append(ElectricBillData(None, None, None, None, None, None, None, None, None, None, None, None,
-                                              None, db_dict=d))
+                                              None, None, db_dict=d))
 
         return bill_list
 
@@ -1162,7 +1162,7 @@ class MySQLAM(MySQLBase):
 
         return notes_list
 
-    def natgas_bill_data_read(self, wheres=(), order_bys=()):
+    def natgas_bill_data_read(self, wheres=(), order_bys=(), limit=None):
         """ Read all fields from natgas_bill_data table
 
         Args:
@@ -1174,7 +1174,7 @@ class MySQLAM(MySQLBase):
         Raises:
             MySQLException: if database read issue occurs
         """
-        qw = QueryWriter("natgas_bill_data", wheres=wheres, order_bys=order_bys)
+        qw = QueryWriter("natgas_bill_data", wheres=wheres, order_bys=order_bys, limit=limit)
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
@@ -1183,7 +1183,7 @@ class MySQLAM(MySQLBase):
         bill_list = []
         for d in dict_list:
             bill_list.append(NatGasBillData(None, None, None, None, None, None, None, None, None, None, None, None,
-                                            None, None, None, None, None, None, db_dict=d))
+                                            None, None, None, None, None, None, None, db_dict=d))
 
         return bill_list
 
@@ -1298,7 +1298,7 @@ class MySQLAM(MySQLBase):
 
         self.execute_commit(query, params_list=final_params, execute_many=True)
 
-    def simple_bill_data_read(self, wheres=(), order_bys=()):
+    def simple_bill_data_read(self, wheres=(), order_bys=(), limit=None):
         """ Read all fields from simple_bill_data table
 
         Args:
@@ -1310,7 +1310,7 @@ class MySQLAM(MySQLBase):
         Raises:
             MySQLException: if database read issue occurs
         """
-        qw = QueryWriter("simple_bill_data", wheres=wheres, order_bys=order_bys)
+        qw = QueryWriter("simple_bill_data", wheres=wheres, order_bys=order_bys, limit=limit)
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
@@ -1318,7 +1318,7 @@ class MySQLAM(MySQLBase):
 
         bill_list = []
         for d in dict_list:
-            bill_list.append(SimpleServiceBillData(None, None, None, None, None, db_dict=d))
+            bill_list.append(SimpleServiceBillData(None, None, None, None, None, None, db_dict=d))
 
         return bill_list
 
@@ -1360,7 +1360,7 @@ class MySQLAM(MySQLBase):
 
         self.execute_commit(query, params_list=final_params, execute_many=True)
 
-    def mortgage_bill_data_read(self, wheres=(), order_bys=()):
+    def mortgage_bill_data_read(self, wheres=(), order_bys=(), limit=None):
         """ Read all fields from mortgage_bill_data table
 
         Args:
@@ -1372,7 +1372,7 @@ class MySQLAM(MySQLBase):
         Raises:
             MySQLException: if database read issue occurs
         """
-        qw = QueryWriter("mortgage_bill_data", wheres=wheres, order_bys=order_bys)
+        qw = QueryWriter("mortgage_bill_data", wheres=wheres, order_bys=order_bys, limit=limit)
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
@@ -1380,7 +1380,7 @@ class MySQLAM(MySQLBase):
 
         bill_list = []
         for d in dict_list:
-            bill_list.append(MortgageBillData(None, None, None, None, None, None, None, None, None, None, None,
+            bill_list.append(MortgageBillData(None, None, None, None, None, None, None, None, None, None, None, None,
                                               db_dict=d))
 
         return bill_list
@@ -1423,7 +1423,7 @@ class MySQLAM(MySQLBase):
 
         self.execute_commit(query, params_list=final_params, execute_many=True)
 
-    def depreciation_bill_data_read(self, wheres=(), order_bys=()):
+    def depreciation_bill_data_read(self, wheres=(), order_bys=(), limit=None):
         """ Read all fields from depreciation_bill_data table
 
         Args:
@@ -1435,7 +1435,7 @@ class MySQLAM(MySQLBase):
         Raises:
             MySQLException: if database read issue occurs
         """
-        qw = QueryWriter("depreciation_bill_data", wheres=wheres, order_bys=order_bys)
+        qw = QueryWriter("depreciation_bill_data", wheres=wheres, order_bys=order_bys, limit=limit)
         query, params = qw.write_read_query()
 
         dict_list = self.execute_fetch(query, params=params)
@@ -1446,6 +1446,6 @@ class MySQLAM(MySQLBase):
             # datetime.date(2020, 1, 1) is a default value that will be overwritten by values in d
             # Decimal(0) is a default value that will be overwritten by value in d
             bill_list.append(DepreciationBillData(None, None, None, datetime.date(2020, 1, 1),
-                                                  datetime.date(2020, 12, 31), Decimal(0), None, db_dict=d))
+                                                  datetime.date(2020, 12, 31), Decimal(0), None, None, db_dict=d))
 
         return bill_list

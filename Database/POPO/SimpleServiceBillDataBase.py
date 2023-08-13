@@ -24,7 +24,8 @@ class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
     """
 
     @abstractmethod
-    def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, paid_date=None, notes=None):
+    def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost, paid_date=None,
+                 notes=None):
         """ init function
 
         Args:
@@ -33,6 +34,7 @@ class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
             start_date (datetime.date): bill start date
             end_date (datetime.date): bill end date
             total_cost (Decimal): total bill cost
+            tax_rel_cost (Decimal): tax related cost
             paid_date (Optional[datetime.date]): date on which bill was paid (for tax purposes). Optional since bill
                 data might be saved before bill is paid
             notes (Optional[str]): notes about this bill
@@ -43,6 +45,7 @@ class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
         self.start_date = start_date
         self.end_date = end_date
         self.total_cost = total_cost
+        self.tax_rel_cost = tax_rel_cost
         self.paid_date = paid_date
         self.notes = notes
 
@@ -53,15 +56,16 @@ class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
             str(self.real_estate)
             str(self.service_provider)
             Start Date: str(self.start_date), End Date: str(self.end_date)
-            Total Cost: str(self.total_cost), Paid Date: str(self.paid_date)
+            Total Cost: str(self.total_cost), Tax Rel Cost: str(self.tax_rel_cost)
+            Paid Date: str(self.paid_date)
             Notes: str(self.notes)
 
         Returns:
             str: as described by Format
         """
         return str(self.real_estate) + "\n" + str(self.service_provider) + "\nStart Date: " + str(self.start_date) + \
-            ", EndDate: " + str(self.end_date) + "\nTotal Cost: " + str(self.total_cost) + ", Paid Date: " + \
-            str(self.paid_date) + "\nNotes: " + str(self.notes)
+            ", EndDate: " + str(self.end_date) + "\nTotal Cost: " + str(self.total_cost) + ", Tax Related Cost: " + \
+            str(self.tax_rel_cost) + "\nPaid Date: " + str(self.paid_date) + "\nNotes: " + str(self.notes)
 
     @abstractmethod
     def copy(self, cost_ratio=None, real_estate=None, **kwargs):
@@ -144,9 +148,10 @@ class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
             db_dict (Optional[dict]): dictionary with instance variables as str keys. Default None to do no update
         """
         if isinstance(db_dict, dict):
-            # use this method of setting attributes instead of __dict__.update to property set private attributes
+            # use this method of setting attributes instead of __dict__.update to properly set private attributes
             for key, value in db_dict.items():
-                setattr(self, key, value)
+                if hasattr(self, key):
+                    setattr(self, key, value)
 
     def to_insert_dict(self):
         """ Convert class attributes to MySQL insertable dict
@@ -182,9 +187,10 @@ class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
         re_df = self.real_estate.to_pd_df().rename(columns={"id": "real_estate_id"})
         sp_df = self.service_provider.to_pd_df().rename(columns={"id": "service_provider_id"})
         other_df = pd.DataFrame(self.__dict__, index=[0]).drop(columns=["real_estate", "service_provider"])
-        df = pd.concat([re_df, sp_df, other_df], axis=1)
         if deprivatize:
-            df = df.rename(columns={"_start_date": "start_date", "_end_date": "end_date", "_paid_date": "paid_date"})
+            other_df = other_df.rename(columns={"_start_date": "start_date", "_end_date": "end_date",
+                                                "_paid_date": "paid_date"})
+        df = pd.concat([re_df, sp_df, other_df], axis=1)
 
         return df
 

@@ -8,8 +8,8 @@ class MortgageBillData(SimpleServiceBillDataBase):
     Attributes:
         see init docstring for attributes (db_dict is not kept as an attribute)
     """
-    def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, outs_prin, esc_bal, prin_pmt,
-                 int_pmt, esc_pmt, other_pmt, paid_date=None, notes=None, db_dict=None):
+    def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost, outs_prin,
+                 esc_bal, prin_pmt, int_pmt, esc_pmt, other_pmt, paid_date=None, notes=None, db_dict=None):
         """ init function
 
         Args:
@@ -21,8 +21,8 @@ class MortgageBillData(SimpleServiceBillDataBase):
             esc_pmt (Decimal): escrow payment
             other_pmt (Decimal): other payment
         """
-        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, paid_date=paid_date,
-                         notes=notes)
+        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost,
+                         paid_date=paid_date, notes=notes)
 
         self.outs_prin = outs_prin
         self.esc_bal = esc_bal

@@ -15,6 +15,9 @@ class MSConsoleUI(SimpleConsoleUIBase, MortgageViewBase):
 
         return filename
 
+    def input_tax_related_cost(self, bill_list):
+        return self.input_tax_related_cost_helper(bill_list, "Mortgage", "interest payment", "0")
+
     def display_bills(self, bill_list):
         print("\n********** Mortgage Bills **********\n")
         for i, bill in enumerate(bill_list):

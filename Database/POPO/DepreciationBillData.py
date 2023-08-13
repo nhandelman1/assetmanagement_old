@@ -14,7 +14,7 @@ class DepreciationBillData(SimpleServiceBillDataBase):
         see init docstring for attributes (db_dict is not kept as an attribute)
     """
     def __init__(self, real_estate, service_provider, real_property_values, start_date, end_date, period_usage_pct,
-                 total_cost, paid_date=None, notes=None, db_dict=None):
+                 total_cost, tax_rel_cost, paid_date=None, notes=None, db_dict=None):
         """ init function
 
         Args:
@@ -28,8 +28,8 @@ class DepreciationBillData(SimpleServiceBillDataBase):
             paid_date (Optional[datetime.date]): must be None or last day of the year (i.e. YYYY-12-31).
                 also enforced by database
         """
-        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, paid_date=paid_date,
-                         notes=notes)
+        super().__init__(real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost,
+                         paid_date=paid_date, notes=notes)
         self.real_property_values = real_property_values
         self.period_usage_pct = period_usage_pct
 

@@ -391,7 +391,8 @@ create table real_estate (
     apt varchar(10),
     city varchar(20) not null,
     state char(2) not null,
-    zip_code char(5) not null
+    zip_code char(5) not null,
+    bill_tax_related boolean not null
 );
 
 create table service_provider (
@@ -429,6 +430,7 @@ create table solar_bill_data (
     solar_kwh smallint unsigned not null,
     home_kwh smallint unsigned not null,
     total_cost decimal(8,2) not null,
+    tax_rel_cost decimal(8,2) not null,
     actual_costs decimal(8,2) not null,
     oc_bom_basis decimal(8,2) not null,
     oc_pnl_pct decimal(4,2) not null,
@@ -451,6 +453,7 @@ create table electric_bill_data (
     eh_kwh smallint unsigned not null,
     bank_kwh mediumint unsigned not null,
     total_cost decimal(6,2) not null,
+    tax_rel_cost decimal(8,2) not null,
     bs_rate decimal(4,2) not null,
     bs_cost decimal(6,2) not null,
     first_kwh smallint unsigned,
@@ -534,6 +537,7 @@ create table natgas_bill_data (
     total_therms smallint unsigned not null,
     saved_therms smallint unsigned not null,
     total_cost decimal(6,2) not null,
+    tax_rel_cost decimal(8,2) not null,
     bsc_therms decimal(3,1) not null,
     bsc_cost decimal(5,2) not null,
     next_therms decimal(4,1) not null,
@@ -607,6 +611,7 @@ create table simple_bill_data (
 	start_date date not null,
     end_date date not null,
     total_cost decimal(6,2) not null,
+    tax_rel_cost decimal(8,2) not null,
     paid_date date,
     notes text,
     # not likely that this constraint will be violated for a legitimate reason
@@ -622,6 +627,7 @@ create table mortgage_bill_data (
 	start_date date not null,
     end_date date not null,
     total_cost decimal(8,2) not null,
+    tax_rel_cost decimal(8,2) not null,
     outs_prin decimal (10, 2) not null,
     esc_bal decimal (8,2) not null,
     prin_pmt decimal (7,2) not null,
@@ -647,6 +653,7 @@ create table depreciation_bill_data (
     # "period" instead of "year" due to purchase date or disposal date probably aren't on Jan 1st
     period_usage_pct decimal(5,2) not null check (period_usage_pct>=000.00 and period_usage_pct <= 100.00),
     total_cost decimal(8,2) not null,
+    tax_rel_cost decimal(8,2) not null,
     paid_date date check (paid_date like "%-12-31"),
     notes text,
     # one depreciation bill per depreciation item per year

@@ -175,7 +175,7 @@ class ComplexServiceModelBase(SimpleServiceModelBase):
         """
         raise NotImplementedError("read_all_service_bills_from_db_unpaid() not implemented by subclass")
 
-    def bills_post_read(self, bill_list, to_pd_df=False):
+    def bills_post_read(self, bill_list, to_pd_df=False, **kwargs):
         """ Convenience function to save bill_list to model and convert bill_list to dataframe if specified
 
         Args:
