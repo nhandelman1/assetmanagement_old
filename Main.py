@@ -1,4 +1,6 @@
-import colorama
+from Util.ConsoleUtil import print, input
+import os
+import builtins
 from Statistics.LeastSquaresReg.LSRegression import LSRegression
 from Statistics.RobustReg.RLMRegression import RLMRegression
 from Statistics.Regression import RegrType
@@ -33,6 +35,7 @@ from Services.NatGas.View.NGConsoleUI import NGConsoleUI
 from Services.Depreciation.Model.DepreciationModel import DepreciationModel
 from Services.Depreciation.View.DepreciationConsoleUI import DepreciationConsoleUI
 from Services.UtilitySavings import UtilitySavings
+from Services.BillReport import BillReport
 
 
 def run_old():
@@ -100,16 +103,22 @@ def run_bill_data_console():
     bill_and_data_display = BillAndDataDisplay(SimpleServiceModel(), SimpleServiceConsoleUI(), MS(), MSConsoleUI(),
                                                Solar(), SolarConsoleUI(), PSEG(), PSEGConsoleUI(), NG(), NGConsoleUI(),
                                                DepreciationModel(), DepreciationConsoleUI())
+    bill_report = BillReport(SimpleServiceModel(), SimpleServiceConsoleUI(), MS(), MSConsoleUI(), Solar(),
+                             SolarConsoleUI(), PSEG(), PSEGConsoleUI(), NG(), NGConsoleUI(), DepreciationModel(),
+                             DepreciationConsoleUI())
+
+    menu_str = "\n######################################################################" + \
+               "\nChoose a bill or data option from the following:" + \
+               "\n1: Input or Create Bills" + \
+               "\n2: Display Bill Data" + \
+               "\n3: Utility Savings Report - Reload " + os.getenv("FO_DIR") + " directory from disk to see file" + \
+               "\n4: Yearly Bill Report" + \
+               "\n0: Exit Program"
 
     while True:
         try:
-            print("\n######################################################################")
-            print("Choose a bill or data option from the following:\n")
-            print("1: Input or Create Bills")
-            print("2: Display Bill Data")
-            print("3: Utility Savings Report - Run then close program to see file in directory")
-            print("0: Exit Program")
-            opt = input("\nSelection: ")
+            print(menu_str)
+            opt = input("\nSelection: ", fcolor="blue")
 
             if opt == "1":
                 bill_and_data_input.do_input_or_create_bill_process()
@@ -118,15 +127,17 @@ def run_bill_data_console():
             elif opt == "3":
                 us = UtilitySavings(PSEG(), PSEGConsoleUI(), NG())
                 us.do_process()
+            elif opt == "4":
+                bill_report.do_process()
             elif opt == "0":
                 break
             else:
-                print(opt + " is not a valid option. Try again.")
+                print(opt + " is not a valid option. Try again.", fcolor="red")
         except Exception as ex:
-            print(colorama.Fore.RED, str(ex))
-            print(colorama.Style.RESET_ALL)
+            print(str(ex), fcolor="red")
 
 
+# TODO standard project structure
 # Run the function if this is the main file executed
 if __name__ == "__main__":
     dotenv.load_dotenv()

@@ -2,8 +2,8 @@ import datetime
 import pandas as pd
 from decimal import Decimal
 from typing import Optional
-from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
 from Database.POPO.RealPropertyValues import RealPropertyValues
+from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
 from Util.PythonUtil import textwrap_lines
 
 
@@ -11,10 +11,10 @@ class DepreciationBillData(SimpleServiceBillDataBase):
     """ Actual bill data for depreciation items
 
     Attributes:
-        see init docstring for attributes (db_dict is not kept as an attribute)
+        see init docstring for attributes
     """
     def __init__(self, real_estate, service_provider, real_property_values, start_date, end_date, period_usage_pct,
-                 total_cost, tax_rel_cost, paid_date=None, notes=None, db_dict=None):
+                 total_cost, tax_rel_cost, paid_date=None, notes=None):
         """ init function
 
         Args:
@@ -33,8 +33,6 @@ class DepreciationBillData(SimpleServiceBillDataBase):
         self.real_property_values = real_property_values
         self.period_usage_pct = period_usage_pct
 
-        self.db_dict_update(db_dict)
-
     def __str__(self):
         """ __str__ override
 
@@ -48,6 +46,17 @@ class DepreciationBillData(SimpleServiceBillDataBase):
         """
         return super().__str__() + "\nPeriod Usage Pct: " + str(self.period_usage_pct) + "%\nReal Property Values:\n" \
             + textwrap_lines(str(self.real_property_values))
+
+    @classmethod
+    def default_constructor(cls):
+        # datetime.date(2020, 1, 1) is a default value that will be overwritten by values in d
+        # Decimal(0) is a default value that will be overwritten by value in d
+        return DepreciationBillData(None, None, None, datetime.date(2020, 1, 1), datetime.date(2020, 12, 31),
+                                    Decimal(0), None, None)
+
+    @classmethod
+    def str_dict_constructor(cls, str_dict):
+        raise NotImplementedError("DepreciationBillData does not implement str_dict_constructor()")
 
     def copy(self, cost_ratio=None, real_estate=None, **kwargs):
         """ see superclass docstring

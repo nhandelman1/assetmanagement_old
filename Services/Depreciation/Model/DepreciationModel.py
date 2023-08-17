@@ -1,16 +1,16 @@
-import pathlib
-import os
 import datetime
+import os
 import pandas as pd
+import pathlib
 from decimal import Decimal
 from typing import Optional
 from Database.MySQLAM import MySQLAM
-from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
+from Database.POPO.DepreciationBillData import DepreciationBillData
 from Database.POPO.RealEstate import Address, RealEstate
 from Database.POPO.RealPropertyValues import RealPropertyValues
-from Database.POPO.DepreciationBillData import DepreciationBillData
-from Services.Model.SimpleServiceModelBase import SimpleServiceModelBase
+from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
 from Services.Depreciation.Model.DepreciationTaxation import DepreciationTaxation
+from Services.Model.SimpleServiceModelBase import SimpleServiceModelBase
 
 
 class DepreciationModel(SimpleServiceModelBase):

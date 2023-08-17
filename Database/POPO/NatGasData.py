@@ -1,6 +1,6 @@
 import datetime
-from typing import Optional
 from decimal import Decimal
+from typing import Optional
 from Database.POPO.UtilityDataBase import UtilityDataBase
 
 
@@ -9,12 +9,12 @@ class NatGasData(UtilityDataBase):
 
     Attributes:
         see super class docstring
-        see init docstring for attributes (db_dict is not kept as an attribute)
+        see init docstring for attributes
     """
     def __init__(self, real_estate, service_provider, month_date, month_year, bsc_therms, bsc_rate, next_therms,
                  next_rate, over_rate, gs_rate, dra_rate=None, wna_low_rate=None, wna_high_rate=None, sbc_rate=None,
                  tac_rate=None, bc_rate=None, ds_nysls_rate=None, ds_nysst_rate=None, ss_nysls_rate=None,
-                 ss_nysst_rate=None, pbc_rate=None, db_dict=None, str_dict=None):
+                 ss_nysst_rate=None, pbc_rate=None):
         """ init function
 
         Args:
@@ -36,11 +36,6 @@ class NatGasData(UtilityDataBase):
             ss_nysls_rate (Optional[Decimal]): supply services ny state and local surcharges rate. Default None.
             ss_nysst_rate (Optional[Decimal]): supply services ny state sales tax. Default None
             pbc_rate (Optional[Decimal]): paperless billing credit rate. Default None
-            db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
-                overwrite an argument provided explicitly through the argument variable
-            str_dict (Optional[dict]): dictionary holding arguments as strings or type specified in this docstring.
-                if an argument is in the dictionary, it will overwrite an argument provided explicitly through the
-                argument variable or through db_dict. month_date str format must be YYYY-MM-DD
         """
         super().__init__(real_estate, service_provider, month_date, month_year)
 
@@ -61,9 +56,6 @@ class NatGasData(UtilityDataBase):
         self.ss_nysls_rate = ss_nysls_rate
         self.ss_nysst_rate = ss_nysst_rate
         self.pbc_rate = pbc_rate
-
-        self.db_dict_update(db_dict)
-        self.str_dict_update(str_dict)
 
     def __str__(self):
         """ __str__ override
@@ -111,36 +103,33 @@ class NatGasData(UtilityDataBase):
             "\nOther Charges/Adjustments:" + \
             "\n  Paperless Billing Credit: Rate: " + str(self.pbc_rate) + "/bill"
 
-    def str_dict_update(self, str_dict):
-        """ Update instance variables using string (or otherwise specified below) values in str_dict
+    @classmethod
+    def default_constructor(cls):
+        return NatGasData(None, None, None, None, None, None, None, None, None, None)
 
-        "real_estate" key must have value RealEstate instance
-        "provider" key must have value ServiceProvider instance
+    @classmethod
+    def str_dict_constructor(cls, str_dict):
+        # month_date str format must be YYYY-MM-DD
+        obj = super().str_dict_constructor(str_dict)
 
-        Args:
-            see superclass docstring
-        """
-        if isinstance(str_dict, dict):
-            def dec_none(val):
-                return None if val is None else Decimal(val)
+        if isinstance(obj.month_date, str):
+            obj.month_date = datetime.datetime.strptime(obj.month_date, "%Y-%m-%d").date()
+        obj.bsc_therms = Decimal(obj.bsc_therms)
+        obj.bsc_rate = Decimal(obj.bsc_rate)
+        obj.next_therms = Decimal(obj.next_therms)
+        obj.next_rate = Decimal(obj.next_rate)
+        obj.over_rate = Decimal(obj.over_rate)
+        obj.gs_rate = Decimal(obj.gs_rate)
+        obj.dra_rate = cls.dec_none(obj.dra_rate)
+        obj.wna_low_rate = cls.dec_none(obj.wna_low_rate)
+        obj.wna_high_rate = cls.dec_none(obj.wna_high_rate)
+        obj.sbc_rate = cls.dec_none(obj.sbc_rate)
+        obj.tac_rate = cls.dec_none(obj.tac_rate)
+        obj.bc_rate = cls.dec_none(obj.bc_rate)
+        obj.ds_nysls_rate = cls.dec_none(obj.ds_nysls_rate)
+        obj.ds_nysst_rate = cls.dec_none(obj.ds_nysst_rate)
+        obj.ss_nysls_rate = cls.dec_none(obj.ss_nysls_rate)
+        obj.ss_nysst_rate = cls.dec_none(obj.ss_nysst_rate)
+        obj.pbc_rate = cls.dec_none(obj.pbc_rate)
 
-            self.__dict__.update(pair for pair in str_dict.items() if pair[0] in self.__dict__.keys())
-            if isinstance(self.month_date, str):
-                self.month_date = datetime.datetime.strptime(self.month_date, "%Y-%m-%d").date()
-            self.bsc_therms = Decimal(self.bsc_therms)
-            self.bsc_rate = Decimal(self.bsc_rate)
-            self.next_therms = Decimal(self.next_therms)
-            self.next_rate = Decimal(self.next_rate)
-            self.over_rate = Decimal(self.over_rate)
-            self.gs_rate = Decimal(self.gs_rate)
-            self.dra_rate = dec_none(self.dra_rate)
-            self.wna_low_rate = dec_none(self.wna_low_rate)
-            self.wna_high_rate = dec_none(self.wna_high_rate)
-            self.sbc_rate = dec_none(self.sbc_rate)
-            self.tac_rate = dec_none(self.tac_rate)
-            self.bc_rate = dec_none(self.bc_rate)
-            self.ds_nysls_rate = dec_none(self.ds_nysls_rate)
-            self.ds_nysst_rate = dec_none(self.ds_nysst_rate)
-            self.ss_nysls_rate = dec_none(self.ss_nysls_rate)
-            self.ss_nysst_rate = dec_none(self.ss_nysst_rate)
-            self.pbc_rate = dec_none(self.pbc_rate)
+        return obj

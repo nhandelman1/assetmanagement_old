@@ -1,7 +1,7 @@
 from ModelViews import GUIUtils
 from PyQt5 import QtCore
 from Database.DBDict import DBDict
-from Database.MySQLAM import ETFDataTypes
+from Database.MySQLOld import ETFDataTypes
 import datetime
 
 

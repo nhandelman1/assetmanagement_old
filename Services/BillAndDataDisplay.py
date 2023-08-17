@@ -1,23 +1,23 @@
 import datetime
-import colorama
 import textwrap
 from enum import Enum
 from typing import Union
 from Database.POPO.RealEstate import RealEstate
 from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
-from Services.Simple.Model.SimpleServiceModel import SimpleServiceModel
-from Services.Simple.View.SimpleViewBase import SimpleViewBase
-from Services.Model.SimpleServiceModelBase import SimpleServiceModelBase
-from Services.Electric.Model.PSEG import PSEG
-from Services.Electric.Model.Solar import Solar
-from Services.NatGas.Model.NG import NG
-from Services.Mortgage.Model.MS import MS
-from Services.Mortgage.View.MortgageViewBase import MortgageViewBase
-from Services.Electric.View.PSEGViewBase import PSEGViewBase
-from Services.Electric.View.SolarViewBase import SolarViewBase
-from Services.NatGas.View.NGViewBase import NGViewBase
 from Services.Depreciation.Model.DepreciationModel import DepreciationModel
 from Services.Depreciation.View.DepreciationViewBase import DepreciationViewBase
+from Services.Electric.Model.PSEG import PSEG
+from Services.Electric.Model.Solar import Solar
+from Services.Electric.View.PSEGViewBase import PSEGViewBase
+from Services.Electric.View.SolarViewBase import SolarViewBase
+from Services.Model.SimpleServiceModelBase import SimpleServiceModelBase
+from Services.Mortgage.Model.MS import MS
+from Services.Mortgage.View.MortgageViewBase import MortgageViewBase
+from Services.NatGas.Model.NG import NG
+from Services.NatGas.View.NGViewBase import NGViewBase
+from Services.Simple.Model.SimpleServiceModel import SimpleServiceModel
+from Services.Simple.View.SimpleViewBase import SimpleViewBase
+from Util.ConsoleUtil import print, input
 
 
 class BillType(Enum):
@@ -200,11 +200,11 @@ class BillAndDataDisplay:
             print_str += ("\n" + bt.value + "\n")
             for sp_id, service_provider in sp_dict.items():
                 print_str += ("  " + str(sp_id) + ": " + str(service_provider.provider.value) + "\n")
-        print_str += "\n0: Return to Parameter Select Menu"
+        print_str = "\n" + print_str + "\n0: Return to Parameter Select Menu"
 
         while True:
             print(print_str)
-            selection = input("Selection: ")
+            selection = input("Selection: ", fcolor="blue")
 
             if selection == "0":
                 break
@@ -212,8 +212,7 @@ class BillAndDataDisplay:
             valid_selection = self.update_selected_service_providers(selection)
 
             if not valid_selection:
-                print(colorama.Fore.RED, "Invalid selection. Enter to try again.")
-                print(colorama.Style.RESET_ALL)
+                print("Invalid selection. Press any key to try again.", fcolor="red")
                 input()
 
     def input_bill_range_paid_date(self, is_min=True):
@@ -226,13 +225,14 @@ class BillAndDataDisplay:
         """
         start_or_end = "minimum" if is_min else "maximum"
         while True:
-            date = input("\nEnter " + start_or_end + " range paid date (YYYYMMDD, do not include quotes): ")
+            date = input("\nEnter " + start_or_end + " range paid date (YYYYMMDD, do not include quotes): ",
+                         fcolor="blue")
+
             try:
                 date = datetime.datetime.strptime(date, "%Y%m%d").date()
                 break
             except ValueError:
-                print(colorama.Fore.RED, "Invalid date format. Try again.")
-                print(colorama.Style.RESET_ALL)
+                print("Invalid date format. Try again.", fcolor="red")
 
         if is_min:
             self.minimum_paid_date = date
@@ -255,27 +255,29 @@ class BillAndDataDisplay:
     def do_display_process(self):
         """ Select bill parameters and display matching bills """
 
+        print_str = "\n###################################################################### " \
+                    "\nBills will be displayed only for bill types that have at least one service provider selected. " \
+                    "\nEnter parameters then select '9' to display matching bills:\n" \
+                    "\n1: Select Real Estate(s)" \
+                    "\n2: Select Service Provider(s)" \
+                    "\n3: Enter Minimum Paid Date" \
+                    "\n4: Enter Maximum Paid Date" \
+                    "\n9: Display Bills Matching Parameters" \
+                    "\n10: Clear Parameters" \
+                    "\n11: Show Parameters" \
+                    "\n0: Return to Previous Menu"
+
         while True:
             try:
-                print("\n######################################################################")
-                print("Bills will be displayed only for bill types that have at least one service provider selected.")
-                print("Enter parameters then select '9' to display matching bills:\n")
-                print("1: Select Real Estate(s)")
-                print("2: Select Service Provider(s)")
-                print("3: Enter Minimum Paid Date")
-                print("4: Enter Maximum Paid Date")
-                print("9: Display Bills Matching Parameters")
-                print("10: Clear Parameters")
-                print("11: Show Parameters")
-                print("0: Return to Previous Menu")
-                opt = input("\nSelection: ")
+                print(print_str)
+                opt = input("\nSelection: ", fcolor="blue")
 
                 if opt == "1":
                     while True:
                         re_id = self.simple_view.input_select_real_estate(self.re_dict)
                         self.add_real_estate(re_id)
                         cont = input("Enter any value to add another real estate. No value to return to parameter "
-                                     "select menu.")
+                                     "select menu: ", fcolor="blue")
                         if cont == "":
                             break
                 elif opt == "2":
@@ -293,7 +295,6 @@ class BillAndDataDisplay:
                 elif opt == "0":
                     break
                 else:
-                    print(opt + " is not a valid option. Try again.")
+                    print(opt + " is not a valid option. Try again.", fcolor="red")
             except Exception as ex:
-                print(colorama.Fore.RED, str(ex))
-                print(colorama.Style.RESET_ALL)
+                print(str(ex), fcolor="red")

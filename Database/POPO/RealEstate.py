@@ -1,7 +1,8 @@
 import pandas as pd
-from typing import Optional
 from enum import Enum
+from typing import Optional
 from Database.POPO.DataFrameable import DataFrameable
+from Database.POPO.ClassConstructors import ClassConstructors
 
 
 class Address(Enum):
@@ -44,15 +45,14 @@ class Address(Enum):
             raise ValueError("No short name set for Address: " + str(self))
 
 
-class RealEstate(DataFrameable):
+class RealEstate(DataFrameable, ClassConstructors):
     """ Real estate data
 
     Attributes:
-        see init docstring (db_dict not kept as an attribute)
+        see init docstring
 
     """
-    def __init__(self, address, street_num, street_name, city, state, zip_code, bill_tax_related, apt=None,
-                 db_dict=None):
+    def __init__(self, address, street_num, street_name, city, state, zip_code, bill_tax_related, apt=None):
         """ init function
 
         Args:
@@ -65,8 +65,6 @@ class RealEstate(DataFrameable):
             bill_tax_related (boolean): True if bills associated with this real estate typically (but not necessarily)
                 affect taxes in some way. False if they typically (but not necessarily) do not.
             apt (Optional[str]): apt name or number
-            db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
-                overwrite an argument provided explicitly through the argument variable
         """
         self.id = None
         self.address = address
@@ -78,12 +76,6 @@ class RealEstate(DataFrameable):
         self.apt = apt
         self.bill_tax_related = bill_tax_related
 
-        if isinstance(db_dict, dict):
-            self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
-            if isinstance(self.address, str):
-                self.address = Address(self.address)
-            self.bill_tax_related = bool(self.bill_tax_related)
-
     def __str__(self):
         """ __str__ override
 
@@ -91,6 +83,20 @@ class RealEstate(DataFrameable):
             str: self.address.value
         """
         return str(self.address.value) + ", Bill Tax Related: " + str(self.bill_tax_related)
+
+    @classmethod
+    def default_constructor(cls):
+        return RealEstate(None, None, None, None, None, None, None)
+
+    @classmethod
+    def str_dict_constructor(cls, str_dict):
+        raise NotImplementedError("RealEstate does not implement str_dict_constructor()")
+
+    def db_dict_update(self, db_dict):
+        super().db_dict_update(db_dict)
+        if isinstance(self.address, str):
+            self.address = Address(self.address)
+        self.bill_tax_related = bool(self.bill_tax_related)
 
     def to_pd_df(self, deprivatize=True, **kwargs):
         """ see superclass docstring

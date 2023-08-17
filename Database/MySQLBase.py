@@ -1,13 +1,13 @@
 """Module for base class for MySQL database connections. """
 import mysql.connector
-import traceback
 import pandas as pd
+import traceback
 from abc import ABC, abstractmethod
-from typing import Optional, Union
 from enum import Enum
-from Logging.Logger import Logger
+from typing import Optional, Union
 from Database.MySQLException import MySQLException
 from Database.QueryWriter import QueryWriter
+from Logging.Logger import Logger
 
 
 class DictInsertable(ABC):
@@ -319,7 +319,6 @@ class MySQLBase(ABC):
         query, di_list = qw.write_insert_query(di_list, ignore=ignore)
 
         self.execute_commit(query, params_list=di_list, execute_many=True)
-
 
     @property
     def fetch_cursor(self):

@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Optional
 from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
 
 
@@ -13,11 +12,11 @@ class SolarBillData(SimpleServiceBillDataBase):
         Decommission: not a cost until it is performed, but removing the panels will be a cost in the future
 
     Attributes:
-        see init docstring for attributes (db_dict is not kept as an attribute)
+        see init docstring for attributes
     """
     def __init__(self, real_estate, service_provider, start_date, end_date, solar_kwh, home_kwh, total_cost,
-                 tax_rel_cost, actual_costs, oc_bom_basis, oc_pnl_pct, oc_pnl, oc_eom_basis, paid_date=None, notes=None,
-                 db_dict=None, calc_variables=None):
+                 tax_rel_cost, actual_costs, oc_bom_basis, oc_pnl_pct, oc_pnl, oc_eom_basis, paid_date=None,
+                 notes=None):
         """ init function
 
         Args:
@@ -33,8 +32,6 @@ class SolarBillData(SimpleServiceBillDataBase):
             oc_pnl_pct (Decimal): pnl percent for sp 500 total return over the billing period
             oc_pnl (Decimal): opportunity cost pnl = oc_bom_basis * oc_pnl_pct
             oc_eom_basis (Decimal): opportunity cost end of month basis = oc_bom_basis + actual_costs + oc_pnl
-            calc_variables (Optional[boolean]): True to call self.calc_variables() as the last operation in this
-                function. Default None or False to not call self.calc_variables()
         """
         super().__init__(real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost,
                          paid_date=paid_date, notes=notes)
@@ -46,11 +43,6 @@ class SolarBillData(SimpleServiceBillDataBase):
         self.oc_pnl = oc_pnl
         self.oc_eom_basis = oc_eom_basis
 
-        self.db_dict_update(db_dict)
-
-        if calc_variables:
-            self.calc_variables()
-
     def __str__(self):
         """ __str__ override
 
@@ -61,9 +53,17 @@ class SolarBillData(SimpleServiceBillDataBase):
             str: as described by Format
         """
         return super().__str__() + "\nSolar KWH Production: " + str(self.solar_kwh) + ", Home KWH Usage: " + \
-                str(self.home_kwh) + "\nActual Costs: " + str(self.actual_costs) + "\nOpportunity Cost: BOM Basis: " + \
+            str(self.home_kwh) + "\nActual Costs: " + str(self.actual_costs) + "\nOpportunity Cost: BOM Basis: " + \
             str(self.oc_bom_basis) + ", PNL Pct: " + str(self.oc_pnl_pct) + "%, PNL: " + str(self.oc_pnl) + \
             ", EOM Basis: " + str(self.oc_eom_basis)
+
+    @classmethod
+    def default_constructor(cls):
+        return SolarBillData(None, None, None, None, None, None, None, None, None, None, None, None, None)
+
+    @classmethod
+    def str_dict_constructor(cls, str_dict):
+        raise NotImplementedError("SolarBillData does not implement str_dict_constructor()")
 
     def copy(self, cost_ratio=None, real_estate=None, **kwargs):
         """ see superclass docstring

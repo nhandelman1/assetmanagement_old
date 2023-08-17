@@ -1,13 +1,13 @@
-import os
-import pathlib
 import datetime
-import tabula
+import os
 import pandas as pd
+import pathlib
+import tabula
 from decimal import Decimal
 from Database.MySQLAM import MySQLAM
-from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
-from Database.POPO.RealEstate import Address
 from Database.POPO.MortgageBillData import MortgageBillData
+from Database.POPO.RealEstate import Address
+from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
 from Services.Model.SimpleServiceModelBase import SimpleServiceModelBase
 
 
@@ -40,7 +40,7 @@ class MS(SimpleServiceModelBase):
         Returns:
             MortgageBillData: with all required fields populated and as many non required fields as available populated
         """
-        bill_data = MortgageBillData(None, None, None, None, None, None, None, None, None, None, None, None)
+        bill_data = MortgageBillData.default_constructor()
 
         def fmt_dec(str_val):
             return Decimal(str_val.replace("$", "").replace(" ", "").replace(",", ""))

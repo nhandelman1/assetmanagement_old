@@ -1,15 +1,16 @@
 import copy
 import pandas as pd
 from abc import ABC, abstractmethod
-from typing import Optional
 from decimal import Decimal
+from typing import Optional
 from Database.MySQLBase import DictInsertable
 from Database.POPO.DataFrameable import DataFrameable
+from Database.POPO.ClassConstructors import ClassConstructors
 from Database.POPO.RealEstate import RealEstate
 from Database.POPO.ServiceProvider import ServiceProvider
 
 
-class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
+class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ClassConstructors, ABC):
     """ Base class for simple data provided on service bill or relevant to service bill
 
     Simple data is for services actually provided and includes location (real estate), provider, start date, end date,
@@ -22,7 +23,6 @@ class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
         id (int): database primary key id
         see init docstring for attributes
     """
-
     @abstractmethod
     def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost, paid_date=None,
                  notes=None):
@@ -140,18 +140,6 @@ class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ABC):
             see __init__ docstring paid_date
         """
         self._paid_date = paid_date
-
-    def db_dict_update(self, db_dict):
-        """ Use db_dict to update instance variables
-
-        Args:
-            db_dict (Optional[dict]): dictionary with instance variables as str keys. Default None to do no update
-        """
-        if isinstance(db_dict, dict):
-            # use this method of setting attributes instead of __dict__.update to properly set private attributes
-            for key, value in db_dict.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
 
     def to_insert_dict(self):
         """ Convert class attributes to MySQL insertable dict

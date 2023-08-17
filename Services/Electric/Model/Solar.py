@@ -1,12 +1,12 @@
 import datetime
-import os
 import decimal
-import pathlib
+import os
 import pandas as pd
+import pathlib
 from decimal import Decimal
-from Database.MySQLAM import MySQLAM, FetchCursor
-from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
+from Database.MySQLAM import FetchCursor, MySQLAM
 from Database.POPO.RealEstate import Address
+from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
 from Database.POPO.SolarBillData import SolarBillData
 from Services.Model.SimpleServiceModelBase import SimpleServiceModelBase
 
@@ -100,7 +100,8 @@ class Solar(SimpleServiceModelBase):
 
         sbd = SolarBillData(real_estate, service_provider, start_date, end_date, kwh_dict["solar_kwh"],
                             kwh_dict["home_kwh"], None, None, actual_costs, prev_bill[0].oc_eom_basis, oc_pnl_pct,
-                            None, None, paid_date=paid_date, notes=notes, calc_variables=True)
+                            None, None, paid_date=paid_date, notes=notes)
+        sbd.calc_variables()
         sbd = self.set_default_tax_related_cost([(sbd, Decimal("NaN"))])[0]
 
         self.asb_dict.insert_bills(sbd)

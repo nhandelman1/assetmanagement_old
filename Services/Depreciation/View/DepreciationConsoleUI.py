@@ -1,9 +1,9 @@
 import datetime
 import decimal
-import colorama
 import textwrap
-from Services.View.SimpleConsoleUIBase import SimpleConsoleUIBase
 from Services.Depreciation.View.DepreciationViewBase import DepreciationViewBase
+from Services.View.SimpleConsoleUIBase import SimpleConsoleUIBase
+from Util.ConsoleUtil import print, input
 
 
 class DepreciationConsoleUI(SimpleConsoleUIBase, DepreciationViewBase):
@@ -29,13 +29,12 @@ class DepreciationConsoleUI(SimpleConsoleUIBase, DepreciationViewBase):
 
         while True:
             try:
-                year = int(input(year_print))
+                year = int(input(year_print, fcolor="blue"))
                 if year >= current_year:
                     raise ValueError
                 break
             except ValueError:
-                print(colorama.Fore.RED, "Invalid year or year is not a previous year. Try Again.")
-                print(colorama.Style.RESET_ALL)
+                print("Invalid year or year is not a previous year. Try Again.", fcolor="red")
 
         return year
 
@@ -45,6 +44,7 @@ class DepreciationConsoleUI(SimpleConsoleUIBase, DepreciationViewBase):
 
         print("\nInput period usages for depreciation items. Note that for a partial year, 100% usage means the "
               "property was used for the entirety of the partial year it was in service.")
+
         for bill in bill_list:
             rpv_str = "\n**** Real Property Value Data ****\n" + textwrap.fill(str(bill.real_property_values),width=150)
             bill_str = "\n**** Bill Data ****\n" + \
@@ -56,13 +56,12 @@ class DepreciationConsoleUI(SimpleConsoleUIBase, DepreciationViewBase):
                 try:
                     print(rpv_str, bill_str, "\n**** Input Period Usage ****")
                     yup = decimal.Decimal(input("Enter period usage as a percent (0 - 100 inclusive) for this "
-                                                "depreciation item: "))
+                                                "depreciation item: ", fcolor="blue"))
                     if yup < decimal.Decimal(0) or yup > decimal.Decimal(100):
                         raise ValueError
                     bill.period_usage_pct = yup
                     break
                 except (decimal.InvalidOperation, ValueError):
-                    print(colorama.Fore.RED, "Period usage percent must be between 0 and 100. Try Again.")
-                    print(colorama.Style.RESET_ALL)
+                    print("Period usage percent must be between 0 and 100. Try Again.", fcolor="red")
 
         return bill_list

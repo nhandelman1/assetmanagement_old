@@ -1,7 +1,7 @@
 import pandas as pd
-from typing import Optional
 from enum import Enum
 from Database.POPO.DataFrameable import DataFrameable
+from Database.POPO.ClassConstructors import ClassConstructors
 
 
 class TaxCategory(Enum):
@@ -44,31 +44,22 @@ class ServiceProviderEnum(Enum):
     YTV_UTI = "YoutubeTV-UTI"
 
 
-class ServiceProvider(DataFrameable):
+class ServiceProvider(DataFrameable, ClassConstructors):
     """ Service provider data
 
     Attributes:
-        see init docstring (db_dict not kept as an attribute)
+        see init docstring
     """
-    def __init__(self, provider, tax_category, db_dict=None):
+    def __init__(self, provider, tax_category):
         """ init function
 
         Args:
             provider (ServiceProviderEnum):
             tax_category (TaxCategory):
-            db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
-                overwrite an argument provided explicitly through the argument variable
         """
         self.id = None
         self.provider = provider
         self.tax_category = tax_category
-
-        if isinstance(db_dict, dict):
-            self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
-            if isinstance(self.provider, str):
-                self.provider = ServiceProviderEnum(self.provider)
-            if isinstance(self.tax_category, str):
-                self.tax_category = TaxCategory(self.tax_category)
 
     def __str__(self):
         """ __str__ override
@@ -77,6 +68,21 @@ class ServiceProvider(DataFrameable):
             str: Provider: self.provider.value, Tax Category: self.tax_category.value
         """
         return "Provider: " + str(self.provider.value) + ", Tax Category: " + str(self.tax_category.value)
+
+    @classmethod
+    def default_constructor(cls):
+        return ServiceProvider(None, None)
+
+    @classmethod
+    def str_dict_constructor(cls, str_dict):
+        raise NotImplementedError("ServiceProvider does not implement str_dict_constructor()")
+
+    def db_dict_update(self, db_dict):
+        super().db_dict_update(db_dict)
+        if isinstance(self.provider, str):
+            self.provider = ServiceProviderEnum(self.provider)
+        if isinstance(self.tax_category, str):
+            self.tax_category = TaxCategory(self.tax_category)
 
     def to_pd_df(self, deprivative=True, **kwargs):
         """ see superclass docstring

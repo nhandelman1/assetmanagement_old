@@ -11,6 +11,20 @@ class SimpleServiceViewBase(ABC):
         pass
 
     @abstractmethod
+    def display_bill_preprocess_warning(self):
+        """ Display this message before asking a user for input about a bill or processing the bill """
+        raise NotImplementedError("display_bill_preprocess_warning() not implemented by subclass")
+
+    @abstractmethod
+    def input_choose_input_data_or_read_bill(self):
+        """ ask to input bill data manually or read data from file
+
+        Returns:
+            str: "1" to input bill data manually or "2" to read data from file
+        """
+        raise NotImplementedError("input_choose_input_data_or_read_bill() not implemented by subclass")
+
+    @abstractmethod
     def input_read_new_bill(self):
         """ ask for new file name
 

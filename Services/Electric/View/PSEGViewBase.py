@@ -11,6 +11,9 @@ class PSEGViewBase(ComplexServiceViewBase):
         """ init function """
         super().__init__()
 
+    def display_bill_preprocess_warning(self):
+        pass
+
     @abstractmethod
     def input_estimation_data(self, address, start_date, end_date):
         """ Input estimation data that isn't available elsewhere for electric bill estimation

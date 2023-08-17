@@ -3,10 +3,10 @@ import pandas as pd
 from abc import abstractmethod
 from typing import Optional, Union
 from Database.MySQLAM import MySQLAM
-from Database.POPO.RealEstate import RealEstate, Address
-from Database.POPO.UtilityDataBase import UtilityDataBase
-from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
 from Database.POPO.ComplexServiceBillDataBase import ComplexServiceBillDataBase
+from Database.POPO.RealEstate import RealEstate, Address
+from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
+from Database.POPO.UtilityDataBase import UtilityDataBase
 from Services.Model.SimpleServiceModelBase import SimpleServiceModelBase, BillDict
 
 
@@ -188,14 +188,17 @@ class ComplexServiceModelBase(SimpleServiceModelBase):
                 dataframe: with all bill data ordered by start date decreasing then actual before estimated bills
         """
         if to_pd_df:
-            df = pd.DataFrame()
+            if len(bill_list) == 0:
+                df = self.read_one_bill().to_pd_df(**kwargs).head(0)
+            else:
+                df = pd.DataFrame()
 
-            for bill in bill_list:
-                df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
-                if bill.is_actual:
-                    self.asb_dict.insert_bills(bill)
-                else:
-                    self.esb_dict.insert_bills(bill)
+                for bill in bill_list:
+                    df = pd.concat([df, bill.to_pd_df()], ignore_index=True)
+                    if bill.is_actual:
+                        self.asb_dict.insert_bills(bill)
+                    else:
+                        self.esb_dict.insert_bills(bill)
 
             return df.sort_values(by=["start_date", "is_actual"])
         else:

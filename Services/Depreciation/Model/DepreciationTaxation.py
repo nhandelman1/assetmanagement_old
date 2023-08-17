@@ -1,9 +1,9 @@
 import datetime
-from typing import Optional
-from enum import Enum
 from decimal import Decimal
-from Database.POPO.RealPropertyValues import RealPropertyValues, DepClass
+from enum import Enum
+from typing import Optional
 from Database.MySQLAM import MySQLAM
+from Database.POPO.RealPropertyValues import DepClass, RealPropertyValues
 
 
 class DepreciationType:

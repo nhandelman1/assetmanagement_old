@@ -1,6 +1,6 @@
 import pandas as pd
-from typing import Optional
 from abc import ABC, abstractmethod
+from typing import Optional
 
 
 class DataFrameable(ABC):

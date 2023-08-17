@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from decimal import Decimal
-from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
 from Database.POPO.DepreciationBillData import DepreciationBillData
+from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
 
 
 class DepreciationViewBase(SimpleServiceViewBase):
@@ -10,6 +10,12 @@ class DepreciationViewBase(SimpleServiceViewBase):
     def __init__(self):
         """ init function """
         super().__init__()
+
+    def display_bill_preprocess_warning(self):
+        pass
+
+    def input_choose_input_data_or_read_bill(self):
+        return "2"
 
     def input_read_new_bill(self):
         """ ask for new file name

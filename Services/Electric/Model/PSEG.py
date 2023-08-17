@@ -2,12 +2,12 @@ import datetime
 import os
 import pathlib
 import tabula
-from typing import Optional, Union
 from decimal import Decimal
+from typing import Optional, Union
 from Database.MySQLAM import MySQLAM
-from Database.POPO.RealEstate import RealEstate, Address
 from Database.POPO.ElectricBillData import ElectricBillData
 from Database.POPO.ElectricData import ElectricData
+from Database.POPO.RealEstate import RealEstate, Address
 from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
 from Services.Model.ComplexServiceModelBase import ComplexServiceModelBase
 
@@ -39,7 +39,10 @@ class PSEG(ComplexServiceModelBase):
         """
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
                                   (os.getenv("FI_PSEG_DIR") + filename), pages="all", password="11720", guess=False)
-        bill_data = ElectricBillData(None, None, None, None, None, 0, 0, None, None, None, None, None, None, True)
+        bill_data = ElectricBillData.default_constructor()
+        bill_data.eh_kwh = 0
+        bill_data.bank_kwh = 0
+        bill_data.is_actual = True
 
         # get start date and end date from 1st page
         srs = df_list[0]
@@ -299,7 +302,7 @@ class PSEG(ComplexServiceModelBase):
         Returns:
             ElectricData: instance populated with values in str_dict
         """
-        return ElectricData(None, None, None, None, None, None, None, str_dict=str_dict)
+        return ElectricData.str_dict_constructor(str_dict)
 
     def initialize_complex_service_bill_estimate(self, address, start_date, end_date, provider=None):
         """ Initialize monthly bill estimate using data from actual bill

@@ -6,10 +6,10 @@ class MortgageBillData(SimpleServiceBillDataBase):
     """ Mortgage implementation of SimpleServiceBillDataBase
 
     Attributes:
-        see init docstring for attributes (db_dict is not kept as an attribute)
+        see init docstring for attributes
     """
     def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost, outs_prin,
-                 esc_bal, prin_pmt, int_pmt, esc_pmt, other_pmt, paid_date=None, notes=None, db_dict=None):
+                 esc_bal, prin_pmt, int_pmt, esc_pmt, other_pmt, paid_date=None, notes=None):
         """ init function
 
         Args:
@@ -31,8 +31,6 @@ class MortgageBillData(SimpleServiceBillDataBase):
         self.esc_pmt = esc_pmt
         self.other_pmt = other_pmt
 
-        self.db_dict_update(db_dict)
-
     def __str__(self):
         """ __str__ override
 
@@ -46,6 +44,14 @@ class MortgageBillData(SimpleServiceBillDataBase):
         return super().__str__() + "\nBalances (before payments applied): Principal: " + str(self.outs_prin) + \
             ", Escrow: " + str(self.esc_bal) + "\nPayments: Principal: " + str(self.prin_pmt) + ", Interest: " + \
             str(self.int_pmt) + ", Escrow: " + str(self.esc_pmt) + ", Other: " + str(self.other_pmt)
+
+    @classmethod
+    def default_constructor(cls):
+        return MortgageBillData(None, None, None, None, None, None, None, None, None, None, None, None)
+
+    @classmethod
+    def str_dict_constructor(cls, str_dict):
+        raise NotImplementedError("MortgageBillData does not implement str_dict_constructor()")
 
     def copy(self, cost_ratio=None, real_estate=None, **kwargs):
         """ see superclass docstring

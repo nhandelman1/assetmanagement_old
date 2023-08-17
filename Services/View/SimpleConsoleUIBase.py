@@ -1,11 +1,10 @@
-import decimal
-import colorama
 import datetime
 import textwrap
 from abc import abstractmethod
 from decimal import Decimal, InvalidOperation
-from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
 from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
+from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
+from Util.ConsoleUtil import print, input
 
 
 class SimpleConsoleUIBase(SimpleServiceViewBase):
@@ -25,16 +24,17 @@ class SimpleConsoleUIBase(SimpleServiceViewBase):
 
         for re_id, real_estate in re_dict.items():
             re_print += str(re_id) + " : " + str(real_estate.address.value) + "\n"
-        re_print += (pre_str + "Select a real estate location from the previous list: ")
+        re_print += pre_str
 
         while True:
+            print(re_print)
             try:
-                select_id = int(input(re_print))
+                select_id = int(input("Select a real estate location from the previous list: ", fcolor="blue"))
             except ValueError:
                 select_id = None
 
             if select_id not in re_ids:
-                print("Invalid Selection. Try Again.")
+                print("Invalid Selection. Try Again.", fcolor="red")
             else:
                 break
 
@@ -46,16 +46,17 @@ class SimpleConsoleUIBase(SimpleServiceViewBase):
 
         for sp_id, service_provider in sp_dict.items():
             sp_print += str(sp_id) + " : " + str(service_provider.provider.value) + "\n"
-        sp_print += (pre_str + "Select a service provider from the previous list: ")
+        sp_print += pre_str
 
         while True:
+            print(sp_print)
             try:
-                select_id = int(input(sp_print))
+                select_id = int(input("Select a service provider from the previous list: ", fcolor="blue"))
             except ValueError:
                 select_id = None
 
             if select_id not in sp_ids:
-                print("Invalid Selection. Try Again.")
+                print("Invalid Selection. Try Again.", fcolor="red")
             else:
                 break
 
@@ -64,13 +65,12 @@ class SimpleConsoleUIBase(SimpleServiceViewBase):
     def input_bill_date(self, is_start=True):
         start_or_end = "start" if is_start else "end"
         while True:
-            date = input("\nEnter bill " + start_or_end + " date (YYYYMMDD, do not include quotes): ")
+            date = input("\nEnter bill " + start_or_end + " date (YYYYMMDD, do not include quotes): ", fcolor="blue")
             try:
                 date = datetime.datetime.strptime(date, "%Y%m%d").date()
                 break
             except ValueError:
-                print(colorama.Fore.RED, "Invalid date format. Try again.")
-                print(colorama.Style.RESET_ALL)
+                print("Invalid date format. Try again.", fcolor="red")
 
         return date
 
@@ -82,27 +82,27 @@ class SimpleConsoleUIBase(SimpleServiceViewBase):
                       + str(bill.service_provider.provider.value) + ", " + str(bill.start_date) + " - "
                       + str(bill.end_date) + ", " + str(bill.total_cost) + ", Notes: " + str(bill.notes))
                 start_date = input("Enter bill paid date (YYYYMMDD, do not include quotes) or 'skip' to not enter a "
-                                   "paid date: ")
+                                   "paid date: ", fcolor="blue")
                 try:
                     if start_date != "skip":
                         bill.paid_date = datetime.datetime.strptime(start_date, "%Y%m%d").date()
                         paid_bill_list.append(bill)
                     break
                 except ValueError:
-                    print(colorama.Fore.RED, "Invalid date value or format. Try again.")
-                    print(colorama.Style.RESET_ALL)
+                    print("Invalid date value or format. Try again.", fcolor="red")
 
         return paid_bill_list
 
     def input_paid_year(self, pre_str=""):
+        pre_str = "\n" + pre_str
         while True:
-            year = input(pre_str + "Enter paid year (YYYY, do not include quotes): ")
+            print(pre_str)
+            year = input("Enter paid year (YYYY, do not include quotes): ", fcolor="blue")
             try:
                 year = int(year)
                 break
             except ValueError:
-                print(colorama.Fore.RED, "Invalid year format. Try again.")
-                print(colorama.Style.RESET_ALL)
+                print("Invalid year format. Try again.", fcolor="red")
 
         return year
 
@@ -136,14 +136,14 @@ class SimpleConsoleUIBase(SimpleServiceViewBase):
 
         def input_func(is_all):
             if is_all:
-                print_str = "See all bills listed. Enter 'skip' to enter ratio per bill. Enter 'cancel' to create no " \
-                            "new bills. Enter ratio 0-1 (inclusive) of the existing bill(s) that the new bill(s) " \
+                print_str = "See all bills listed. Enter 'skip' to enter ratio per bill, 'cancel' to create no " \
+                            "new bills or ratio 0-1 (inclusive) of the existing bill(s) that the new bill(s) " \
                             "will be: "
             else:
-                print_str = "Enter 'cancel' or 'skip' to not create a new partial bill for this existing bill. " \
-                            "Enter ratio 0 - 1 (inclusive) of the existing bill that the new bill will be: "
+                print_str = "Enter 'cancel' or 'skip' to not create a new partial bill for this existing bill, or " \
+                            "enter ratio 0 - 1 (inclusive) of the existing bill that the new bill will be: "
             while True:
-                ratio1 = input(textwrap.fill(print_str, width=100))
+                ratio1 = input(textwrap.fill(print_str, width=100), fcolor="blue")
 
                 if ratio1 == "skip":
                     if is_all:
@@ -159,9 +159,8 @@ class SimpleConsoleUIBase(SimpleServiceViewBase):
                     if not ratio1.is_nan() and (ratio1 < Decimal(0) or ratio1 > Decimal(1)):
                         raise ValueError
                     break
-                except (ValueError, decimal.InvalidOperation):
-                    print(colorama.Fore.RED, "Invalid value. Try again.")
-                    print(colorama.Style.RESET_ALL)
+                except (ValueError, InvalidOperation):
+                    print("Invalid value. Try again.", fcolor="red")
 
             return ratio1
 
@@ -194,18 +193,19 @@ class SimpleConsoleUIBase(SimpleServiceViewBase):
             str: "" if allow_blank is True and blank is entered. 'skip' if allow_skip is True and 'skip' is
                 entered. str format *.XX otherwise
         """
-        print_str = ""
-        if allow_blank:
-            print_str += " blank, "
-        if allow_skip:
-            print_str += " 'skip', "
-        print_str += ("" if print_str == "" else " or ") + " decimal value: (*.XX format): "
-        print_str = "\nEnter" + print_str
+        ask_str = "\n" + textwrap.fill(ask_str, width=100)
 
-        print_str = "\n" + textwrap.fill(ask_str, width=100) + print_str
+        input_str = ""
+        if allow_blank:
+            input_str += " blank, "
+        if allow_skip:
+            input_str += " 'skip', "
+        input_str += ("" if input_str == "" else " or ") + " decimal value: (*.XX format): "
+        input_str = "\nEnter" + input_str
 
         while True:
-            dol_val = input(print_str)
+            print(ask_str)
+            dol_val = input(input_str, fcolor="blue")
 
             if allow_blank and dol_val == "":
                 break
@@ -216,14 +216,12 @@ class SimpleConsoleUIBase(SimpleServiceViewBase):
             try:
                 Decimal(dol_val)
             except InvalidOperation:
-                print(colorama.Fore.RED, "Invalid format. Try again.")
-                print(colorama.Style.RESET_ALL)
+                print("Invalid format. Try again.", fcolor="red")
                 continue
 
             tc_split = dol_val.split(".")
             if len(tc_split) != 2 or len(tc_split[1]) != 2:
-                print(colorama.Fore.RED, "Must have 2 decimal places. Try again.")
-                print(colorama.Style.RESET_ALL)
+                print("Must have 2 decimal places. Try again.", fcolor="red")
                 continue
 
             break

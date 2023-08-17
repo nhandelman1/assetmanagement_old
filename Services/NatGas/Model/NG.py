@@ -1,14 +1,14 @@
 import datetime
 import os
-import pathlib
 import pandas as pd
+import pathlib
 import tabula
-from typing import Optional
 from decimal import Decimal
+from typing import Optional
 from Database.MySQLAM import MySQLAM
-from Database.POPO.RealEstate import RealEstate, Address
 from Database.POPO.NatGasBillData import NatGasBillData
 from Database.POPO.NatGasData import NatGasData
+from Database.POPO.RealEstate import RealEstate, Address
 from Database.POPO.ServiceProvider import ServiceProvider, ServiceProviderEnum
 from Services.Model.ComplexServiceModelBase import ComplexServiceModelBase
 
@@ -43,8 +43,9 @@ class NG(ComplexServiceModelBase):
         """
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
                             (os.getenv("FI_NATIONALGRID_DIR") + filename), pages="all", password="11720", guess=False)
-        bill_data = NatGasBillData(None, None, None, None, None, 0, None, None, None, None, None, None, None, None,
-                                   None, None, None, None, True)
+        bill_data = NatGasBillData.default_constructor()
+        bill_data.saved_therms = 0
+        bill_data.is_actual = True
 
         df = None
         for df_1 in df_list:
@@ -304,7 +305,7 @@ class NG(ComplexServiceModelBase):
         Returns:
             NatGasData: instance populated with values in str_dict
         """
-        return NatGasData(None, None, None, None, None, None, None, None, None, None, str_dict=str_dict)
+        return NatGasData.str_dict_constructor(str_dict)
 
     def initialize_complex_service_bill_estimate(self, address, start_date, end_date, provider=None):
         """ Initialize monthly bill estimate using data from actual bill

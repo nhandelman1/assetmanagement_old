@@ -1,6 +1,7 @@
 import os
-from Services.View.SimpleConsoleUIBase import SimpleConsoleUIBase
 from Services.Mortgage.View.MortgageViewBase import MortgageViewBase
+from Services.View.SimpleConsoleUIBase import SimpleConsoleUIBase
+from Util.ConsoleUtil import print, input
 
 
 class MSConsoleUI(SimpleConsoleUIBase, MortgageViewBase):
@@ -11,9 +12,8 @@ class MSConsoleUI(SimpleConsoleUIBase, MortgageViewBase):
 
     def input_read_new_bill(self):
         print("\nSave mortgage bill to " + str(os.getenv("FI_MORGANSTANLEY_DIR")) + " directory.")
-        filename = input("Enter mortgage bill file name (include extension): ")
 
-        return filename
+        return input("Enter mortgage bill file name (include extension): ", fcolor="blue")
 
     def input_tax_related_cost(self, bill_list):
         return self.input_tax_related_cost_helper(bill_list, "Mortgage", "interest payment", "0")

@@ -1,7 +1,7 @@
 import datetime
 from abc import abstractmethod
-from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
 from Database.POPO.RealEstate import Address
+from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
 
 
 class ComplexServiceViewBase(SimpleServiceViewBase):
@@ -9,6 +9,9 @@ class ComplexServiceViewBase(SimpleServiceViewBase):
     @abstractmethod
     def __init__(self):
         super().__init__()
+
+    def input_choose_input_data_or_read_bill(self):
+        return "2"
 
     @abstractmethod
     def input_read_new_or_use_existing_bill_option(self):

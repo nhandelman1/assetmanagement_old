@@ -17,6 +17,9 @@ class SolarViewBase(SimpleServiceViewBase):
         """
         raise NotImplementedError("display_preprocess_warning() not implemented by subclass")
 
+    def input_choose_input_data_or_read_bill(self):
+        return "2"
+
     def input_tax_related_cost(self, bill_list):
         """ see superclass method docstring
 

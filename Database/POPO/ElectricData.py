@@ -1,6 +1,6 @@
 import datetime
-from typing import Optional
 from decimal import Decimal
+from typing import Optional
 from Database.POPO.UtilityDataBase import UtilityDataBase
 
 
@@ -9,11 +9,11 @@ class ElectricData(UtilityDataBase):
 
     Attributes:
         see super class docstring
-        see init docstring for attributes (db_dict is not kept as an attribute)
+        see init docstring for attributes
     """
     def __init__(self, real_estate, service_provider, month_date, month_year, first_kwh, first_rate, next_rate,
                  mfc_rate=None, psc_rate=None, der_rate=None, dsa_rate=None, rda_rate=None, nysa_rate=None,
-                 rbp_rate=None, spta_rate=None, db_dict=None, str_dict=None):
+                 rbp_rate=None, spta_rate=None):
         """ init function
 
         Args:
@@ -29,11 +29,6 @@ class ElectricData(UtilityDataBase):
             nysa_rate (Optional[Decimal]): new york state assessment rate. Default None
             rbp_rate (Optional[Decimal]): revenue based pilots rate. Default None
             spta_rate (Optional[Decimal]): suffolk property tax adjustment rate. Default None
-            db_dict (Optional[dict]): dictionary holding arguments loaded from database table. if an argument is in the
-                dictionary, it will overwrite an argument provided explicitly through the argument variable
-            str_dict (Optional[dict]): dictionary holding arguments as strings or type specified in this docstring.
-                if an argument is in the dictionary, it will overwrite an argument provided explicitly through the
-                argument variable or through db_dict. month_date str format must be YYYY-MM-DD
         """
         super().__init__(real_estate, service_provider, month_date, month_year)
 
@@ -48,9 +43,6 @@ class ElectricData(UtilityDataBase):
         self.nysa_rate = nysa_rate
         self.rbp_rate = rbp_rate
         self.spta_rate = spta_rate
-
-        self.db_dict_update(db_dict)
-        self.str_dict_update(str_dict)
 
     def __str__(self):
         """ __str__ override
@@ -88,6 +80,33 @@ class ElectricData(UtilityDataBase):
             "\n  New York State Assessment: Rate: " + str(self.nysa_rate) + \
             "\n  Revenue Based Pilots: Rate: " + str(self.rbp_rate) + \
             "\n  Suffolk Property Tax Adjustment: Rate: " + str(self.spta_rate)
+
+    @classmethod
+    def default_constructor(cls):
+        return ElectricData(None, None, None, None, None, None, None)
+
+    @classmethod
+    def str_dict_constructor(cls, str_dict):
+        # month_date str format must be YYYY-MM-DD
+        # "real_estate" key must have value RealEstate instance
+        # "service_provider" key must have value ServiceProvider instance
+        obj = super().str_dict_constructor(str_dict)
+
+        if isinstance(obj.month_date, str):
+            obj.month_date = datetime.datetime.strptime(obj.month_date, "%Y-%m-%d").date()
+        obj.first_kwh = int(obj.first_kwh)
+        obj.first_rate = Decimal(obj.first_rate)
+        obj.next_rate = Decimal(obj.next_rate)
+        obj.mfc_rate = cls.dec_none(obj.mfc_rate)
+        obj.psc_rate = cls.dec_none(obj.psc_rate)
+        obj.der_rate = cls.dec_none(obj.der_rate)
+        obj.dsa_rate = cls.dec_none(obj.dsa_rate)
+        obj.rda_rate = cls.dec_none(obj.rda_rate)
+        obj.nysa_rate = cls.dec_none(obj.nysa_rate)
+        obj.rbp_rate = cls.dec_none(obj.rbp_rate)
+        obj.spta_rate = cls.dec_none(obj.spta_rate)
+
+        return obj
 
     def str_dict_update(self, str_dict):
         """ Update instance variables using string (or otherwise specified below) values in str_dict

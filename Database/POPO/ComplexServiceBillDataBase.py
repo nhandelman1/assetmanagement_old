@@ -1,4 +1,3 @@
-from typing import Optional
 from abc import abstractmethod
 from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
 
@@ -14,7 +13,6 @@ class ComplexServiceBillDataBase(SimpleServiceBillDataBase):
     Attributes:
         see init docstring for attributes
     """
-
     @abstractmethod
     def __init__(self, real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost, is_actual,
                  paid_date=None, notes=None):
@@ -41,16 +39,5 @@ class ComplexServiceBillDataBase(SimpleServiceBillDataBase):
         return "Actual Bill: " + str(self.is_actual) + ", " + super().__str__()
 
     def db_dict_update(self, db_dict):
-        """ Use db_dict to update instance variables
-
-        Must overwrite this method to set boolean values properly (bool instead of int)
-
-        Args:
-            db_dict (Optional[dict]): dictionary with instance variables as keys. Default None to do no update
-        """
-        if isinstance(db_dict, dict):
-            # use this method of setting attributes instead of __dict__.update to property set private attributes
-            for key, value in db_dict.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            self.is_actual = bool(self.is_actual)
+        super().db_dict_update(db_dict)
+        self.is_actual = bool(self.is_actual)

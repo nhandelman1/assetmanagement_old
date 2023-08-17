@@ -1,7 +1,8 @@
 import os
-from Services.View.ComplexConsoleUIBase import ComplexConsoleUIBase
-from Services.Electric.View.PSEGViewBase import PSEGViewBase
 from Database.POPO.ServiceProvider import ServiceProviderEnum
+from Services.Electric.View.PSEGViewBase import PSEGViewBase
+from Services.View.ComplexConsoleUIBase import ComplexConsoleUIBase
+from Util.ConsoleUtil import print, input
 
 
 class PSEGConsoleUI(ComplexConsoleUIBase, PSEGViewBase):
@@ -12,15 +13,12 @@ class PSEGConsoleUI(ComplexConsoleUIBase, PSEGViewBase):
         super().__init__()
 
     def input_read_new_or_use_existing_bill_option(self):
-        opt = input("\nEnter '1' to read new electric bill or anything else to use existing electric bill: ")
-
-        return opt
+        return input("\nEnter '1' to read new electric bill or anything else to use existing electric bill: ",
+                     fcolor="blue")
 
     def input_read_new_bill(self):
         print("\nSave electric bill to " + str(os.getenv("FI_PSEG_DIR")) + " directory.")
-        filename = input("Enter electric bill file name (include extension): ")
-
-        return filename
+        return input("Enter electric bill file name (include extension): ", fcolor="blue")
 
     def input_tax_related_cost(self, bill_list):
         return self.input_tax_related_cost_helper(bill_list, "Electric", "total", "0")
@@ -38,5 +36,5 @@ class PSEGConsoleUI(ComplexConsoleUIBase, PSEGViewBase):
     def input_estimation_data(self, address, start_date, end_date):
         print("Input estimation data for " + str(ServiceProviderEnum.PSEG_UTI.value) + " electric bill at "
               + str(address.value) + " with start date - end date: " + str(start_date) + " - " + str(end_date))
-        eh_kwh = input("Electric heater kwh usage: ")
+        eh_kwh = input("Electric heater kwh usage: ", fcolor="blue")
         return {"eh_kwh": int(eh_kwh)}

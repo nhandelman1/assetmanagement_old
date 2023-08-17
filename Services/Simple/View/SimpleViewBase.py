@@ -1,8 +1,8 @@
 from abc import abstractmethod
-from typing import Callable
 from decimal import Decimal
-from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
+from typing import Callable
 from Database.POPO.SimpleServiceBillData import SimpleServiceBillData
+from Services.View.SimpleServiceViewBase import SimpleServiceViewBase
 
 
 class SimpleViewBase(SimpleServiceViewBase):
@@ -12,14 +12,8 @@ class SimpleViewBase(SimpleServiceViewBase):
         """ init function """
         super().__init__()
 
-    @abstractmethod
-    def input_choose_input_data_or_read_bill(self):
-        """ ask to input bill data manually or read data from file
-
-        Returns:
-            str: "1" to input bill data manually or "2" to read data from file
-        """
-        raise NotImplementedError("input_choose_input_data_or_read_bill() not implemented by subclass")
+    def display_bill_preprocess_warning(self):
+        pass
 
     @abstractmethod
     def input_bill_data(self, re_dict, sp_dict,

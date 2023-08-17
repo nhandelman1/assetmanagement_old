@@ -8,7 +8,7 @@ class ElectricBillData(ComplexServiceBillDataBase):
 
     Attributes:
         see super class docstring
-        see init docstring for attributes (db_dict is not kept as an attribute)
+        see init docstring for attributes
     """
 
     def __init__(self, real_estate, service_provider, start_date, end_date, total_kwh, eh_kwh, bank_kwh, total_cost,
@@ -17,7 +17,7 @@ class ElectricBillData(ComplexServiceBillDataBase):
                  cbc_cost=None, mfc_rate=None, mfc_cost=None, psc_rate=None, psc_cost=None, psc_total_cost=None,
                  der_rate=None, der_cost=None, dsa_rate=None, dsa_cost=None, rda_rate=None, rda_cost=None,
                  nysa_rate=None, nysa_cost=None, rbp_rate=None, rbp_cost=None, spta_rate=None, spta_cost=None,
-                 st_rate=None, st_cost=None, paid_date=None, notes=None, db_dict=None):
+                 st_rate=None, st_cost=None, paid_date=None, notes=None):
         """ init function
 
         Args:
@@ -56,8 +56,6 @@ class ElectricBillData(ComplexServiceBillDataBase):
             spta_cost (Optional[Decimal]): suffolk property tax adjustment cost. Default None
             st_rate (Optional[Decimal]): sales tax rate. Default None
             st_cost (Optional[Decimal]): sales tax cost. Default None
-            db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
-                overwrite an argument provided explicitly through the argument variable
         """
         super().__init__(real_estate, service_provider, start_date, end_date, total_cost, tax_rel_cost, is_actual,
                          paid_date=paid_date, notes=notes)
@@ -96,8 +94,6 @@ class ElectricBillData(ComplexServiceBillDataBase):
         self.st_rate = st_rate
         self.st_cost = st_cost
         self.toc_total_cost = toc_total_cost
-
-        self.db_dict_update(db_dict)
 
     def __str__(self):
         """ __str__ override
@@ -146,6 +142,14 @@ class ElectricBillData(ComplexServiceBillDataBase):
             "\n  Revenue Based Pilots: Rate: " + str(self.rbp_rate) + ", Cost: " + str(self.rbp_cost) + \
             "\n  Suffolk Property Tax Adjustment: Rate: " + str(self.spta_rate) + ", Cost: " + str(self.spta_cost) + \
             "\n  Sales Tax: Rate: " + str(self.st_rate) + ", Cost: " + str(self.st_cost)
+
+    @classmethod
+    def default_constructor(cls):
+        return ElectricBillData(None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+
+    @classmethod
+    def str_dict_constructor(cls, str_dict):
+        raise NotImplementedError("ElectricBillData does not implement str_dict_constructor()")
 
     def copy(self, cost_ratio=None, real_estate=None, **kwargs):
         """ see superclass docstring

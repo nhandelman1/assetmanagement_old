@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtCore
 from Database import DBDict
-from Database.MySQLAM import MySQLAM
+from Database.MySQLOld import MySQLOld
 from Database.DBDict import DBDict
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar2QT
@@ -124,7 +124,7 @@ def sec_sec_attach_detach_button_clicked(selected_comp_items, main_table, isAtta
     selected_main_dict = main_table.selectedItems()[0].data(QtCore.Qt.UserRole)
 
     for table_item in selected_comp_items:
-        db_dict_list.append(MySQLAM.security_security_db_dict([None, selected_main_dict["securities_id"],
+        db_dict_list.append(MySQLOld.security_security_db_dict([None, selected_main_dict["securities_id"],
                                                                table_item.data(QtCore.Qt.UserRole)["securities_id"]]))
 
     if isAttach:

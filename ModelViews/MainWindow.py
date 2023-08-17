@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets
 from ModelViews.MainGUI import Ui_MainWindow  # importing our generated file
-from Database.MySQLAM import MySQLAM
+from Database.MySQLOld import MySQLOld
 from ModelViews.MenuBarMV import MenuBarMV
 from ModelViews.DataInputTab.DataInputTabMV import DataInputTabMV
 from ModelViews.StatisticsTab.StatisticsTabMV import StatisticsTabMV
@@ -17,7 +17,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.db = MySQLAM()
+        self.db = MySQLOld()
 
         self.menu_bar_mv = MenuBarMV(self, self.ui, self.db)
 

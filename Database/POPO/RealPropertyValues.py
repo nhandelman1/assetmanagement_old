@@ -1,8 +1,9 @@
 import pandas as pd
+from decimal import Decimal
 from enum import Enum
 from typing import Optional
-from decimal import Decimal
 from Database.POPO.DataFrameable import DataFrameable
+from Database.POPO.ClassConstructors import ClassConstructors
 from Database.POPO.RealEstate import RealEstate
 
 
@@ -17,16 +18,15 @@ class DepClass(Enum):
     GDS_YEAR5_SL_MM = "GDS-YEAR5-SL-MM"
 
 
-class RealPropertyValues(DataFrameable):
+class RealPropertyValues(DataFrameable, ClassConstructors):
     """ Real property values data
 
     Initially used for home improvement related data but could be others. Might need to generalize this concept.
 
     Attributes:
-        see init docstring (db_dict not kept as an attribute)
+        see init docstring
     """
-    def __init__(self, real_estate, item, purchase_date, cost_basis, dep_class, disposal_date=None, notes=None,
-                 db_dict=None):
+    def __init__(self, real_estate, item, purchase_date, cost_basis, dep_class, disposal_date=None, notes=None):
         """ init function
 
         Args:
@@ -37,8 +37,6 @@ class RealPropertyValues(DataFrameable):
             dep_class (DepClass): depreciation class
             disposal_date (Optional[datetime.date]): date of disposal of item. Default None for not disposed
             notes (Optional[str]): any notes associated with this item. Default None for no notes
-            db_dict (Optional[dict]): dictionary holding arguments. if an argument is in the dictionary, it will
-                overwrite an argument provided explicitly through the argument variable. Default None
         """
         self.id = None
         self.real_estate = real_estate
@@ -49,15 +47,23 @@ class RealPropertyValues(DataFrameable):
         self.dep_class = dep_class
         self.notes = notes
 
-        if isinstance(db_dict, dict):
-            self.__dict__.update(pair for pair in db_dict.items() if pair[0] in self.__dict__.keys())
-            if isinstance(self.dep_class, str):
-                self.dep_class = DepClass(self.dep_class)
-
     def __str__(self):
         return self.real_estate.address.value + "\n" + self.item + ", Depreciation Class: " + self.dep_class.value \
             + "\nPurchase Date: " + str(self.purchase_date) + ", Disposal Date: " + str(self.disposal_date) \
             + "\nCost Basis: " + str(self.cost_basis) + "\nNotes: " + str(self.notes)
+
+    @classmethod
+    def default_constructor(cls):
+        return RealPropertyValues(None, None, None, None, None)
+
+    @classmethod
+    def str_dict_constructor(cls, str_dict):
+        raise NotImplementedError("RealPropertyValues does not implement str_dict_constructor()")
+
+    def db_dict_update(self, db_dict):
+        super().db_dict_update(db_dict)
+        if isinstance(self.dep_class, str):
+            self.dep_class = DepClass(self.dep_class)
 
     def to_pd_df(self, deprivatize=True, **kwargs):
         """ see superclass docstring

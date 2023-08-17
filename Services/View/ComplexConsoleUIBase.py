@@ -1,6 +1,7 @@
 from abc import abstractmethod
-from Services.View.SimpleConsoleUIBase import SimpleConsoleUIBase
 from Services.View.ComplexServiceViewBase import ComplexServiceViewBase
+from Services.View.SimpleConsoleUIBase import SimpleConsoleUIBase
+from Util.ConsoleUtil import print, input
 
 
 class ComplexConsoleUIBase(SimpleConsoleUIBase, ComplexServiceViewBase):
@@ -19,7 +20,7 @@ class ComplexConsoleUIBase(SimpleConsoleUIBase, ComplexServiceViewBase):
         for d in notes_list:
             note_type = d["note_type"]
             print("\n" + note_type + "\n" + d["note"])
-            inp = input("Input value for " + note_type + ": ")
+            inp = input("Input value for " + note_type + ": ", fcolor="blue")
             el_dict[note_type] = inp
 
         return el_dict

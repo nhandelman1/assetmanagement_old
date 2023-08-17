@@ -1,15 +1,14 @@
 """ openpyxl utility functions
 
 """
-
-import os
-from typing import Optional, Union
-import pandas as pd
-import openpyxl.utils.cell as OPCellUtil
 import openpyxl.styles as OPStyles
+import openpyxl.utils.cell as OPCellUtil
+import os
+import pandas as pd
 from collections import defaultdict
 from enum import Enum
 from openpyxl import load_workbook
+from typing import Optional, Union
 
 
 # 0.5 for each comma and the decimal point

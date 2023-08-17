@@ -1,9 +1,9 @@
-import colorama
 import os
 from decimal import Decimal
-from Services.View.SimpleConsoleUIBase import SimpleConsoleUIBase
-from Services.Simple.View.SimpleViewBase import SimpleViewBase
 from Database.POPO.SimpleServiceBillData import SimpleServiceBillData
+from Services.Simple.View.SimpleViewBase import SimpleViewBase
+from Services.View.SimpleConsoleUIBase import SimpleConsoleUIBase
+from Util.ConsoleUtil import print, input
 
 
 class SimpleServiceConsoleUI(SimpleConsoleUIBase, SimpleViewBase):
@@ -15,20 +15,18 @@ class SimpleServiceConsoleUI(SimpleConsoleUIBase, SimpleViewBase):
     def input_read_new_bill(self):
         print("\nGo to " + str(os.getenv("FI_SIMPLE_DIR")) + " directory and use template file to create a new simple "
               "bill using actual bill. Save file in the same directory.")
-        filename = input("Enter simple service bill file name (include extension): ")
 
-        return filename
+        return input("Enter simple service bill file name (include extension): ", fcolor="blue")
 
     def input_tax_related_cost(self, bill_list):
         return self.input_tax_related_cost_helper(bill_list, "Simple", "total", "0")
 
     def input_choose_input_data_or_read_bill(self):
         while True:
-            opt = input("\nEnter '1' to input bill data manually or '2' to read data from file: ")
+            opt = input("\nEnter '1' to input bill data manually or '2' to read data from file: ", fcolor="blue")
 
             if opt not in ["1", "2"]:
-                print(colorama.Fore.RED, opt + " is not a valid option. Try again.")
-                print(colorama.Style.RESET_ALL)
+                print(opt + " is not a valid option. Try again.", fcolor="red")
             else:
                 break
 
@@ -49,7 +47,7 @@ class SimpleServiceConsoleUI(SimpleConsoleUIBase, SimpleViewBase):
         bill_trc_list = self.input_tax_related_cost([bill])
         bill = set_default_tax_related_cost_func(bill_trc_list)[0]
 
-        notes = input("\nEnter any notes for this bill (leave blank for no notes): ")
+        notes = input("\nEnter any notes for this bill (leave blank for no notes): ", fcolor="blue")
         bill.notes = None if notes == "" else notes
 
         bill_list = self.input_paid_dates([bill])

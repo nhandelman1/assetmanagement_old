@@ -1,16 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import Union
 from Database.MySQLBase import DictInsertable
+from Database.POPO.ClassConstructors import ClassConstructors
 from Database.POPO.RealEstate import RealEstate
 from Database.POPO.ServiceProvider import ServiceProvider
 
 
-class UtilityDataBase(DictInsertable, ABC):
+class UtilityDataBase(DictInsertable, ClassConstructors, ABC):
     """ Base class for monthly data not necessarily provided on monthly utility bill and can be found elsewhere
 
     Attributes:
         id (int): database primary key id
-        see init docstring for attributes (db_dict is not kept as an attribute)
+        see init docstring for attributes
     """
 
     @abstractmethod
@@ -41,32 +41,6 @@ class UtilityDataBase(DictInsertable, ABC):
             str: as described by Format
         """
         return str(self.real_estate) + "\n" + str(self.service_provider) + "\n" + str(self.month_year)
-
-    @abstractmethod
-    def str_dict_update(self, str_dict):
-        """ Update instance variables using string (or subclass specific) values in str_dict
-
-        Subclasses must implement this since the data type for each instance variable is dependent on the subclass
-
-        Args:
-            str_dict (Union[dict, None]): dictionary with instance variables (string keys) and string
-                (or subclass specific) values. None is allowed for convenience
-        """
-        raise NotImplementedError("str_dict_update() not implemented by subclass")
-
-    def db_dict_update(self, db_dict):
-        """ Update instance variables using db_dict
-
-        Args:
-            db_dict (Union[dict, None]): dictionary with instance variables (string keys) and values (datatype values).
-                None is allowed for convenience
-        """
-        # use db_dict to update instance variables
-        if isinstance(db_dict, dict):
-            # use this method of setting attributes instead of __dict__.update to property set private attributes
-            for key, value in db_dict.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
 
     def to_insert_dict(self):
         """ Convert class to dict

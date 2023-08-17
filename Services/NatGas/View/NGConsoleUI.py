@@ -1,7 +1,8 @@
 import os
-from Services.View.ComplexConsoleUIBase import ComplexConsoleUIBase
-from Services.NatGas.View.NGViewBase import NGViewBase
 from Database.POPO.ServiceProvider import ServiceProviderEnum
+from Services.NatGas.View.NGViewBase import NGViewBase
+from Services.View.ComplexConsoleUIBase import ComplexConsoleUIBase
+from Util.ConsoleUtil import print, input
 
 
 class NGConsoleUI(ComplexConsoleUIBase, NGViewBase):
@@ -12,15 +13,13 @@ class NGConsoleUI(ComplexConsoleUIBase, NGViewBase):
         super().__init__()
 
     def input_read_new_or_use_existing_bill_option(self):
-        opt = input("\nEnter '1' to read new natural gas bill or anything else to use existing natural gas bill: ")
-
-        return opt
+        return input("\nEnter '1' to read new natural gas bill or anything else to use existing natural gas bill: ",
+                     fcolor="blue")
 
     def input_read_new_bill(self):
         print("\nSave natural gas bill to " + str(os.getenv("FI_NATIONALGRID_DIR")) + " directory.")
-        filename = input("Enter natural gas bill file name (include extension): ")
 
-        return filename
+        return input("Enter natural gas bill file name (include extension): ", fcolor="blue")
 
     def input_tax_related_cost(self, bill_list):
         return self.input_tax_related_cost_helper(bill_list, "Natural Gas", "total", "0")
@@ -38,5 +37,5 @@ class NGConsoleUI(ComplexConsoleUIBase, NGViewBase):
     def input_estimation_data(self, address, start_date, end_date):
         print("Input estimation data for " + str(ServiceProviderEnum.NG_UTI.value) + " natural gas bill at "
               + str(address.value) + " with start date - end date: " + str(start_date) + " - " + str(end_date))
-        saved_therms = input("Natural gas saved therms: ")
+        saved_therms = input("Natural gas saved therms: ", fcolor="blue")
         return {"saved_therms": int(saved_therms)}
