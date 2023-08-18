@@ -5,9 +5,9 @@ import traceback
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional, Union
-from Database.MySQLException import MySQLException
-from Database.QueryWriter import QueryWriter
-from Logging.Logger import Logger
+from database.mysqlexception import MySQLException
+from database.querywriter import QueryWriter
+from logging.Logger import Logger
 
 
 class DictInsertable(ABC):

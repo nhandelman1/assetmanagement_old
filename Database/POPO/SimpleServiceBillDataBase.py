@@ -3,11 +3,11 @@ import pandas as pd
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import Optional
-from Database.MySQLBase import DictInsertable
-from Database.POPO.DataFrameable import DataFrameable
-from Database.POPO.ClassConstructors import ClassConstructors
-from Database.POPO.RealEstate import RealEstate
-from Database.POPO.ServiceProvider import ServiceProvider
+from database.mysqlbase import DictInsertable
+from database.popo.dataframeable import DataFrameable
+from database.popo.classconstructors import ClassConstructors
+from database.popo.realestate import RealEstate
+from database.popo.serviceprovider import ServiceProvider
 
 
 class SimpleServiceBillDataBase(DictInsertable, DataFrameable, ClassConstructors, ABC):

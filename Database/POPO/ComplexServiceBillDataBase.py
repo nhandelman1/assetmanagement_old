@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
+from database.popo.simpleservicebilldatabase import SimpleServiceBillDataBase
 
 
 class ComplexServiceBillDataBase(SimpleServiceBillDataBase):

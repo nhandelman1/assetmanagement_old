@@ -3,8 +3,8 @@ Temporary module for these classes
 """
 
 from enum import Enum
-from Database.DBDict import DBDict
-from Database.MySQLAM import MySQLAM
+from database.dbdict import DBDict
+from database.mysqlam import MySQLAM
 
 
 class ETFDataTypes(Enum):

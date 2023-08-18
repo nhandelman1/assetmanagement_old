@@ -1,8 +1,8 @@
 import pandas as pd
 from enum import Enum
 from typing import Optional
-from Database.POPO.DataFrameable import DataFrameable
-from Database.POPO.ClassConstructors import ClassConstructors
+from database.popo.dataframeable import DataFrameable
+from database.popo.classconstructors import ClassConstructors
 
 
 class Address(Enum):

@@ -2,9 +2,9 @@ import pandas as pd
 from decimal import Decimal
 from enum import Enum
 from typing import Optional
-from Database.POPO.DataFrameable import DataFrameable
-from Database.POPO.ClassConstructors import ClassConstructors
-from Database.POPO.RealEstate import RealEstate
+from database.popo.dataframeable import DataFrameable
+from database.popo.classconstructors import ClassConstructors
+from database.popo.realestate import RealEstate
 
 
 class DepClass(Enum):

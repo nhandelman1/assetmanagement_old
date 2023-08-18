@@ -1,7 +1,7 @@
 import datetime
 from decimal import Decimal
 from typing import Optional
-from Database.POPO.UtilityDataBase import UtilityDataBase
+from database.popo.utilitydatabase import UtilityDataBase
 
 
 class NatGasData(UtilityDataBase):

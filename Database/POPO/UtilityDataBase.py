@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from Database.MySQLBase import DictInsertable
-from Database.POPO.ClassConstructors import ClassConstructors
-from Database.POPO.RealEstate import RealEstate
-from Database.POPO.ServiceProvider import ServiceProvider
+from database.mysqlbase import DictInsertable
+from database.popo.classconstructors import ClassConstructors
+from database.popo.realestate import RealEstate
+from database.popo.serviceprovider import ServiceProvider
 
 
 class UtilityDataBase(DictInsertable, ClassConstructors, ABC):

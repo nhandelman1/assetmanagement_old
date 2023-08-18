@@ -1,5 +1,5 @@
 from decimal import Decimal
-from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
+from database.popo.simpleservicebilldatabase import SimpleServiceBillDataBase
 
 
 class SolarBillData(SimpleServiceBillDataBase):

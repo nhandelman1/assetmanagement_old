@@ -143,6 +143,6 @@ cython_debug/
 *.png
 
 # Directories
-Files/
+files/
 
-# Specific Files
+# Specific files

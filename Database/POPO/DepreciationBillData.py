@@ -2,9 +2,9 @@ import datetime
 import pandas as pd
 from decimal import Decimal
 from typing import Optional
-from Database.POPO.RealPropertyValues import RealPropertyValues
-from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
-from Util.PythonUtil import textwrap_lines
+from database.popo.realpropertyvalues import RealPropertyValues
+from database.popo.simpleservicebilldatabase import SimpleServiceBillDataBase
+from util.pythonutil import textwrap_lines
 
 
 class DepreciationBillData(SimpleServiceBillDataBase):

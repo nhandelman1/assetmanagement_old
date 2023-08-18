@@ -1,4 +1,4 @@
-from Database.POPO.SimpleServiceBillDataBase import SimpleServiceBillDataBase
+from database.popo.simpleservicebilldatabase import SimpleServiceBillDataBase
 
 
 class SimpleServiceBillData(SimpleServiceBillDataBase):

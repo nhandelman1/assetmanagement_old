@@ -1,19 +1,19 @@
 import os
 import pandas as pd
 from typing import Optional, Union
-from Database.MySQLBase import FetchCursor, MySQLBase
-from Database.POPO.DepreciationBillData import DepreciationBillData
-from Database.POPO.ElectricBillData import ElectricBillData
-from Database.POPO.ElectricData import ElectricData
-from Database.POPO.MortgageBillData import MortgageBillData
-from Database.POPO.NatGasBillData import NatGasBillData
-from Database.POPO.NatGasData import NatGasData
-from Database.POPO.RealEstate import RealEstate
-from Database.POPO.RealPropertyValues import RealPropertyValues
-from Database.POPO.ServiceProvider import ServiceProvider
-from Database.POPO.SimpleServiceBillData import SimpleServiceBillData
-from Database.POPO.SolarBillData import SolarBillData
-from Database.QueryWriter import QueryWriter
+from database.mysqlbase import FetchCursor, MySQLBase
+from database.popo.depreciationbilldata import DepreciationBillData
+from database.popo.electricbilldata import ElectricBillData
+from database.popo.electricdata import ElectricData
+from database.popo.mortgagebilldata import MortgageBillData
+from database.popo.natgasbilldata import NatGasBillData
+from database.popo.natgasdata import NatGasData
+from database.popo.realestate import RealEstate
+from database.popo.realpropertyvalues import RealPropertyValues
+from database.popo.serviceprovider import ServiceProvider
+from database.popo.simpleservicebilldata import SimpleServiceBillData
+from database.popo.solarbilldata import SolarBillData
+from database.querywriter import QueryWriter
 
 
 class MySQLAM(MySQLBase):
