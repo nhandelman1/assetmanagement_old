@@ -1,25 +1,14 @@
-from util.consoleutil import print, input
-import os
 import builtins
-from statistics.leastsquaresreg.lsregression import LSRegression
-from statistics.robustreg.rlmregression import RLMRegression
-from statistics.regression import RegrType
-import pandas as pd
+import datetime
+import dotenv
 import numpy as np
+import os
+import pandas as pd
+import scipy.stats as spstats
 import statsmodels.api as sm
-from statsmodels.multivariate.pca import PCA
-from statsmodels.imputation import mice
-from PyQt5 import QtWidgets
 import sys
 from modelviews.mainwindow import MainWindow
-import datetime
-import modelviews.guiutils as GUIUtils
-from statistics.equation import Equation
-import scipy.stats as spstats
-import matplotlib.pyplot as plt
-from scipy.stats import t
-from statistics.regression import RegrType
-import dotenv
+from PyQt5 import QtWidgets
 from services.billanddatainput import BillAndDataInput
 from services.billanddatadisplay import BillAndDataDisplay
 from services.simple.model.simpleservicemodel import SimpleServiceModel
@@ -36,6 +25,7 @@ from services.depreciation.model.depreciationmodel import DepreciationModel
 from services.depreciation.view.depreciationconsoleui import DepreciationConsoleUI
 from services.utilitysavings import UtilitySavings
 from services.billreport import BillReport
+from util.consoleutil import print, input
 
 
 def run_old():

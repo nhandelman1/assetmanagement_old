@@ -1,4 +1,5 @@
-from statistics import Transform, PreImpute
+from statisticsam.transform import Transform
+from statisticsam.preimpute import PreImpute
 import pandas as pd
 
 
@@ -25,8 +26,8 @@ class StatsData:
         self.name = name
         self.column = column
         self.var = var
-        self.transform = Transform.Transform(transform, var == "RAA")
-        self.pre_impute = PreImpute.PreImpute(pre_impute_list[0], pre_impute_list[1])
+        self.transform = Transform(transform, var == "RAA")
+        self.pre_impute = PreImpute(pre_impute_list[0], pre_impute_list[1])
 
         if file_name is None:
             self.type = data_type

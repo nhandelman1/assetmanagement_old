@@ -1,4 +1,4 @@
-from statistics.LeastSquaresReg.OLSModelParams import OLSModelParams
+from statisticsam.leastsquaresreg.olsmodelparams import OLSModelParams
 
 
 class WLSModelParams(OLSModelParams):

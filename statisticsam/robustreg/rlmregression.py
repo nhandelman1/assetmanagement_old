@@ -1,6 +1,6 @@
-from statistics.Regression import Regression, RegrType
-from statistics.RobustReg.RLMModelParams import RLMModelParams
-from statistics.RobustReg.RLMFitParams import RLMFitParams
+from statisticsam.regression import Regression, RegrType
+from statisticsam.robustreg.rlmmodelparams import RLMModelParams
+from statisticsam.robustreg.rlmfitparams import RLMFitParams
 import statsmodels.api as sm
 
 

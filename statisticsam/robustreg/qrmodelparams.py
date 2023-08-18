@@ -1,4 +1,4 @@
-from statistics.Params import Params
+from statisticsam.params import Params
 
 
 class QRModelParams(Params):

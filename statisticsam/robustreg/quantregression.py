@@ -1,6 +1,6 @@
-from statistics.Regression import Regression, RegrType
-from statistics.RobustReg.QRModelParams import QRModelParams
-from statistics.RobustReg.QRFitParams import QRFitParams
+from statisticsam.regression import Regression, RegrType
+from statisticsam.robustreg.qrmodelparams import QRModelParams
+from statisticsam.robustreg.qrfitparams import QRFitParams
 import statsmodels.api as sm
 
 

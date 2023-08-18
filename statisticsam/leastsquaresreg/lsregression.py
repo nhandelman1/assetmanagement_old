@@ -1,9 +1,9 @@
-from statistics.Regression import Regression, RegrType
-from statistics.LeastSquaresReg.OLSModelParams import OLSModelParams
-from statistics.LeastSquaresReg.WLSModelParams import WLSModelParams
-from statistics.LeastSquaresReg.GLSModelParams import GLSModelParams
-from statistics.LeastSquaresReg.GLSARModelParams import GLSARModelParams
-from statistics.LeastSquaresReg.LSFitParams import LSFitParams
+from statisticsam.regression import Regression, RegrType
+from statisticsam.leastsquaresreg.olsmodelparams import OLSModelParams
+from statisticsam.leastsquaresreg.wlsmodelparams import WLSModelParams
+from statisticsam.leastsquaresreg.glsmodelparams import GLSModelParams
+from statisticsam.leastsquaresreg.glsarmodelparams import GLSARModelParams
+from statisticsam.leastsquaresreg.lsfitparams import LSFitParams
 
 import statsmodels.api as sm
 

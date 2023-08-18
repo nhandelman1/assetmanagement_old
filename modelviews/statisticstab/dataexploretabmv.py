@@ -1,5 +1,5 @@
-from statistics.statsdata import StatsData
-from statistics.equation import Equation
+from statisticsam.statsdata import StatsData
+from statisticsam.equation import Equation
 from modelviews import guiutils
 import matplotlib.pyplot as plt
 import pandas as pd

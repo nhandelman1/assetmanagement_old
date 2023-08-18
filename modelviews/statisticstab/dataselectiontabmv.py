@@ -1,9 +1,11 @@
 from modelviews import guiutils
 from PyQt5 import QtWidgets, QtCore
-from statistics import Transform, StatsData, Equation, PreImpute
+from statisticsam.transform import Transform
+from statisticsam.statsdata import StatsData
+from statisticsam.equation import Equation
+from statisticsam.preimpute import PreImpute
 import datetime
 import csv
-import pandas as pd
 
 
 class DataSelectionTabMV:
@@ -73,18 +75,18 @@ class DataSelectionTabMV:
         self.ui.statsDataSelBeginField.setDate(QtCore.QDate.currentDate())
         self.ui.statsDataSelEndField.setDate(QtCore.QDate.currentDate())
         guiutils.combobox_list_refresh(self.ui.statsDataSelVarCombo,
-                                       [[x] for x in StatsData.StatsData.VAR_TYPE_LIST], False)
+                                       [[x] for x in StatsData.VAR_TYPE_LIST], False)
         guiutils.combobox_list_refresh(self.ui.statsDataSelPreImputeCombo,
-                                       [[x] for x in PreImpute.PreImpute.IMPUTATION_LIST], False)
+                                       [[x] for x in PreImpute.IMPUTATION_LIST], False)
         self.update_pos_combo()
 
     def var_combo_changed(self):
         if self.ui.statsDataSelVarCombo.currentText() == "Other":
             trans_list = []
         elif self.ui.statsDataSelVarCombo.currentText() == "RAA":
-            trans_list = Transform.Transform.RAA_TRANSFORM_LIST
+            trans_list = Transform.RAA_TRANSFORM_LIST
         else:
-            trans_list = Transform.Transform.TRANSFORM_LIST
+            trans_list = Transform.TRANSFORM_LIST
 
         guiutils.combobox_list_refresh(self.ui.statsDataSelTransformCombo, [[s] for s in trans_list], False)
 
@@ -203,7 +205,7 @@ class DataSelectionTabMV:
         data_type_data = self.ui.statsDataSelTypeCombo.currentData()
         data_subtype_data = self.ui.statsDataSelSubtypeCombo.currentData()
 
-        stats_data = StatsData.StatsData(
+        stats_data = StatsData(
             name, column, self.ui.statsDataSelTransformCombo.currentText(),
             [self.ui.statsDataSelPreImputeCombo.currentText(), self.ui.statsDataSelPreImputeField.text()],
             self.ui.statsDataSelVarCombo.currentText(), self.ui.statsDataSelTypeCombo.currentText(),
@@ -268,7 +270,7 @@ class DataSelectionTabMV:
         if freq == '':
             freq = None
 
-        stats_data = StatsData.StatsData(
+        stats_data = StatsData(
             name, column, self.ui.statsDataSelTransformCombo.currentText(),
             [self.ui.statsDataSelPreImputeCombo.currentText(), self.ui.statsDataSelPreImputeField.text()],
             self.ui.statsDataSelVarCombo.currentText(), file_name=filename, freq=freq)
@@ -369,7 +371,7 @@ class DataSelectionTabMV:
                 if name == table.item(r, 0).text():
                     return
 
-        equation = Equation.Equation(name, False)
+        equation = Equation(name, False)
         error_msg = equation.infix_str_to_postfix_list(int_eq)
         if error_msg is None:
             error_msg = equation.check_variable_count(data_table.rowCount())

@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Optional, Union
 from database.mysqlexception import MySQLException
 from database.querywriter import QueryWriter
-from logging.Logger import Logger
+from loggingam.logger import Logger
 
 
 class DictInsertable(ABC):

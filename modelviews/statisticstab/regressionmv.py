@@ -1,7 +1,7 @@
-from statistics.Regression import RegrType
-from statistics.LeastSquaresReg.LSRegression import LSRegression
-from statistics.RobustReg.QuantRegression import QuantRegression
-from statistics.RobustReg.RLMRegression import RLMRegression
+from statisticsam.regression import RegrType
+from statisticsam.leastsquaresreg.lsregression import LSRegression
+from statisticsam.robustreg.quantregression import QuantRegression
+from statisticsam.robustreg.rlmregression import RLMRegression
 from modelviews import guiutils
 from PyQt5 import QtWidgets, QtCore
 

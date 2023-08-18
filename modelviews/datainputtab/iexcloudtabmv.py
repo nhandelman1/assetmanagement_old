@@ -5,7 +5,7 @@ import json
 import datetime
 
 
-class iexcloudTabMV:
+class IEXCloudTabMV:
 
     def __init__(self, ui, db):
         self.ui = ui
