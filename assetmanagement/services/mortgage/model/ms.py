@@ -47,7 +47,7 @@ class MS(SimpleServiceModelBase):
         def fmt_dec(str_val):
             return Decimal(str_val.replace("$", "").replace(" ", "").replace(",", ""))
 
-        df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
+        df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent.parent /
                                   (os.getenv("FI_MORGANSTANLEY_DIR") + filename), pages="all", guess=False, silent=True)
 
         df = df_list[0]

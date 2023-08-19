@@ -47,7 +47,8 @@ class DepreciationModel(SimpleServiceModelBase):
             fn = bill.real_estate.address.short_name() + "_" + bill.real_property_values.item + "_" \
                  + str(bill.real_property_values.purchase_date) + "_" + str(bill.start_date) + "_" \
                  + str(bill.end_date) + "_" + str(ver) + ".csv"
-            return fn, pathlib.Path(__file__).parent.parent.parent.parent / (os.getenv("FI_DEPRECIATION_DIR") + fn)
+            return fn, pathlib.Path(__file__).parent.parent.parent.parent.parent / \
+                       (os.getenv("FI_DEPRECIATION_DIR") + fn)
 
         filename, full_path = to_fn(1)
         while os.path.exists(full_path):
@@ -86,7 +87,7 @@ class DepreciationModel(SimpleServiceModelBase):
         Raises:
             ValueError: if address or service provider not found or value is not in correct format
         """
-        df = pd.read_csv(pathlib.Path(__file__).parent.parent.parent.parent /
+        df = pd.read_csv(pathlib.Path(__file__).parent.parent.parent.parent.parent /
                          (os.getenv("FI_DEPRECIATION_DIR") + filename))
 
         address = df.loc[0, "address"]

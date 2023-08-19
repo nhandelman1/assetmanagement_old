@@ -163,7 +163,8 @@ class BillReport:
             delete_file (boolean): True to delete output file if it exists. Default False to not.
         """
         output_file = "Yearly Bill Report for " + str(real_estate.address.short_name()) + " - " + str(year) + ".xlsx"
-        output_file = pathlib.Path(__file__).parent.parent / (os.getenv("FO_DIR") + excelutil.clean_file_name(output_file))
+        output_file = pathlib.Path(__file__).parent.parent.parent / \
+                      (os.getenv("FO_DIR") + excelutil.clean_file_name(output_file))
 
         if os.path.exists(output_file) and delete_file:
             os.remove(output_file)

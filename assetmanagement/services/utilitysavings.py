@@ -85,8 +85,8 @@ class UtilitySavings:
 
         Output file name has format: "Utility Savings as of (datetime this function is called).xlsx"
         """
-        output_file = pathlib.Path(__file__).parent.parent / (os.getenv("FO_DIR") +
-                                                              excelutil.clean_file_name("Utility Savings as of " + str(datetime.datetime.now()) + ".xlsx"))
+        output_file = pathlib.Path(__file__).parent.parent.parent / (os.getenv("FO_DIR") +
+                         excelutil.clean_file_name("Utility Savings as of " + str(datetime.datetime.now()) + ".xlsx"))
         writer = pd.ExcelWriter(output_file, engine="openpyxl")
         self.final_df.to_excel(writer)
         ws = writer.book["Sheet1"]

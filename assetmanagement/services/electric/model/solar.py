@@ -41,7 +41,7 @@ class Solar(SimpleServiceModelBase):
         Raises:
             ValueError: if required dates not found or have incorrect values or format
         """
-        df = pd.read_csv(pathlib.Path(__file__).parent.parent.parent.parent /
+        df = pd.read_csv(pathlib.Path(__file__).parent.parent.parent.parent.parent /
                          (os.getenv("FI_SUNPOWER_DIR") + filename))
         start_date = datetime.datetime.strptime(df.loc[0, "start_date"], "%Y-%m-%d").date()
         end_date = datetime.datetime.strptime(df.loc[0, "end_date"], "%Y-%m-%d").date()
@@ -225,7 +225,7 @@ class Solar(SimpleServiceModelBase):
         Raises:
             ValueError: if a date does not have 24 entries (1 per hour)
         """
-        df = pd.read_excel(pathlib.Path(__file__).parent.parent.parent.parent /
+        df = pd.read_excel(pathlib.Path(__file__).parent.parent.parent.parent.parent /
                            (os.getenv("FI_SUNPOWER_DIR") + filename))
         df = df.rename(columns={"Period": "dt", "Solar Production (kWh)": "solar_kwh", "Home Usage (kWh)": "home_kwh"})
         df["dt"] = df["dt"].str.split(" ").map(lambda x: x[1] + " " + x[3])

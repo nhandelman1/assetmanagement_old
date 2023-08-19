@@ -43,7 +43,7 @@ class NG(ComplexServiceModelBase):
         Raises:
             ValueError: unable to read relevant data in bill
         """
-        df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent /
+        df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent.parent /
                             (os.getenv("FI_NATIONALGRID_DIR") + filename), pages="all", password="11720", guess=False)
         bill_data = NatGasBillData.default_constructor()
         bill_data.saved_therms = 0

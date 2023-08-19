@@ -28,7 +28,7 @@ class Logger:
         formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : line %(lineno)s : "
                                       "%(message)s")
 
-        log_file = str(pathlib.Path(__file__).parent.parent / (os.getenv("FO_LOGGING_DIR") + "Python_Log.log"))
+        log_file = str(pathlib.Path(__file__).parent.parent.parent / (os.getenv("FO_LOGGING_DIR") + "Python_Log.log"))
         file_handler = TimedRotatingFileHandler(log_file, when="midnight")
         file_handler.setFormatter(formatter)
 

@@ -50,7 +50,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
         def to_fn(ver):
             fn = bill.real_estate.address.short_name() + "_" + str(bill.service_provider.provider.value) + "_" \
                    + str(bill.start_date) + "_" + str(bill.end_date) + "_" + str(ver) + ".csv"
-            return fn, pathlib.Path(__file__).parent.parent.parent.parent / (os.getenv("FI_SIMPLE_DIR") + fn)
+            return fn, pathlib.Path(__file__).parent.parent.parent.parent.parent / (os.getenv("FI_SIMPLE_DIR") + fn)
 
         filename, full_path = to_fn(1)
         while os.path.exists(full_path):
@@ -89,7 +89,8 @@ class SimpleServiceModel(SimpleServiceModelBase):
         Raises:
             ValueError: if address or service provider not found or value is not in correct format
         """
-        df = pd.read_csv(pathlib.Path(__file__).parent.parent.parent.parent / (os.getenv("FI_SIMPLE_DIR") + filename))
+        df = pd.read_csv(pathlib.Path(__file__).parent.parent.parent.parent.parent /
+                         (os.getenv("FI_SIMPLE_DIR") + filename))
 
         address = df.loc[0, "address"]
         real_estate = self.read_real_estate_by_address(Address.to_address(address))
