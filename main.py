@@ -1,31 +1,31 @@
-import builtins
-import datetime
 import dotenv
-import numpy as np
 import os
+import sys
+
+from PyQt5 import QtWidgets
+import numpy as np
 import pandas as pd
 import scipy.stats as spstats
 import statsmodels.api as sm
-import sys
-from modelviews.mainwindow import MainWindow
-from PyQt5 import QtWidgets
-from services.billanddatainput import BillAndDataInput
-from services.billanddatadisplay import BillAndDataDisplay
-from services.simple.model.simpleservicemodel import SimpleServiceModel
-from services.simple.view.simpleserviceconsoleui import SimpleServiceConsoleUI
-from services.mortgage.model.ms import MS
-from services.mortgage.View.msconsoleui import MSConsoleUI
-from services.electric.model.pseg import PSEG
-from services.electric.view.psegconsoleui import PSEGConsoleUI
-from services.electric.model.solar import Solar
-from services.electric.view.solarconsoleui import SolarConsoleUI
-from services.natgas.model.ng import NG
-from services.natgas.view.ngconsoleui import NGConsoleUI
-from services.depreciation.model.depreciationmodel import DepreciationModel
-from services.depreciation.view.depreciationconsoleui import DepreciationConsoleUI
-from services.utilitysavings import UtilitySavings
-from services.billreport import BillReport
-from util.consoleutil import print, input
+
+from assetmanagement.modelviews.mainwindow import MainWindow
+from assetmanagement.services.billanddatainput import BillAndDataInput
+from assetmanagement.services.billanddatadisplay import BillAndDataDisplay
+from assetmanagement.services.simple.model.simpleservicemodel import SimpleServiceModel
+from assetmanagement.services.simple.view.simpleserviceconsoleui import SimpleServiceConsoleUI
+from assetmanagement.services.mortgage.model.ms import MS
+from assetmanagement.services.mortgage.view.msconsoleui import MSConsoleUI
+from assetmanagement.services.electric.model.pseg import PSEG
+from assetmanagement.services.electric.view.psegconsoleui import PSEGConsoleUI
+from assetmanagement.services.electric.model.solar import Solar
+from assetmanagement.services.electric.view.solarconsoleui import SolarConsoleUI
+from assetmanagement.services.natgas.model.ng import NG
+from assetmanagement.services.natgas.view.ngconsoleui import NGConsoleUI
+from assetmanagement.services.depreciation.model.depreciationmodel import DepreciationModel
+from assetmanagement.services.depreciation.view.depreciationconsoleui import DepreciationConsoleUI
+from assetmanagement.services.utilitysavings import UtilitySavings
+from assetmanagement.services.billreport import BillReport
+from assetmanagement.util.consoleutil import print, input
 
 
 def run_old():
