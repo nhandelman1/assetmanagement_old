@@ -18,7 +18,7 @@ class PSEGConsoleUI(ComplexConsoleUIBase, PSEGViewBase):
                      fcolor="blue")
 
     def input_read_new_bill(self):
-        print("\nSave electric bill to " + str(os.getenv("FI_PSEG_DIR")) + " directory.")
+        print("\nSave electric bill to " + str(os.getenv("DI_PSEG_DIR")) + " directory.")
         return input("Enter electric bill file name (include extension): ", fcolor="blue")
 
     def input_tax_related_cost(self, bill_list):

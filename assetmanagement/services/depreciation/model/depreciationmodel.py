@@ -36,19 +36,22 @@ class DepreciationModel(SimpleServiceModelBase):
     def save_to_file(self, bill):
         """ Save depreciation bill to file with same format as DepreciationBillTemplate.csv
 
-        File saved to .env FI_DEPRECIATION_DIR directory. Existing file will not be overwritten (see next note)
+        File saved to .env DI_DEPRECIATION_DIR directory. Existing file will not be overwritten (see next note)
         Filename format: shortaddress_depreciationitem_purchasedate_startdate_enddate_*.csv
             * (int): if this file exists, replace star with next int in sequence until new file name is created
 
         Args:
             bill (DepreciationBillData): save this bill to file
+
+        Returns:
+            str: output file name
         """
         def to_fn(ver):
             fn = bill.real_estate.address.short_name() + "_" + bill.real_property_values.item + "_" \
                  + str(bill.real_property_values.purchase_date) + "_" + str(bill.start_date) + "_" \
                  + str(bill.end_date) + "_" + str(ver) + ".csv"
             return fn, pathlib.Path(__file__).parent.parent.parent.parent.parent / \
-                       (os.getenv("FI_DEPRECIATION_DIR") + fn)
+                       (os.getenv("DI_DEPRECIATION_DIR") + fn)
 
         filename, full_path = to_fn(1)
         while os.path.exists(full_path):
@@ -67,7 +70,7 @@ class DepreciationModel(SimpleServiceModelBase):
     def process_service_bill(self, filename):
         """ Open, process and return depreciation bill in same format as DepreciationBillTemplate.csv
 
-        See directory specified by FI_DEPRECIATION_DIR in .env for DepreciationBillTemplate.csv
+        See directory specified by DI_DEPRECIATION_DIR in .env for DepreciationBillTemplate.csv
             address: valid values found in database.popo.realestate.Address values
             provider: see self.valid_providers() then database.popo.serviceprovider.ServiceProviderEnum for valid values
             item: an existing database.popo.realpropertyvalues.RealPropertyValues.item value
@@ -78,7 +81,7 @@ class DepreciationModel(SimpleServiceModelBase):
         Returned instance of DepreciationBillData is added to self.asb_dict
 
         Args:
-            filename (str): name of file in directory specified by FI_DEPRECIATION_DIR in .env
+            filename (str): name of file in directory specified by DI_DEPRECIATION_DIR in .env
 
         Returns:
             DepreciationBillData: all attributes are set with bill values except id and paid_date. id is set to None
@@ -88,7 +91,7 @@ class DepreciationModel(SimpleServiceModelBase):
             ValueError: if address or service provider not found or value is not in correct format
         """
         df = pd.read_csv(pathlib.Path(__file__).parent.parent.parent.parent.parent /
-                         (os.getenv("FI_DEPRECIATION_DIR") + filename))
+                         (os.getenv("DI_DEPRECIATION_DIR") + filename))
 
         address = df.loc[0, "address"]
         real_estate = self.read_real_estate_by_address(Address.to_address(address))

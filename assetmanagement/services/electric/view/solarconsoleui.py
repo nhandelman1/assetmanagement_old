@@ -18,7 +18,7 @@ class SolarConsoleUI(SimpleConsoleUIBase, SolarViewBase):
               "to electric utility usage over a certain period.", fcolor="red")
 
     def input_read_new_bill(self):
-        print("\nGo to " + str(os.getenv("FI_SUNPOWER_DIR")) + " directory and use template file to create a new solar "
+        print("\nGo to " + str(os.getenv("DI_SUNPOWER_DIR")) + " directory and use template file to create a new solar "
               "bill. Save file in the same directory.")
 
         return input("Enter solar bill file name (include extension): ", fcolor="blue")
@@ -37,6 +37,6 @@ class SolarConsoleUI(SimpleConsoleUIBase, SolarViewBase):
 
     def input_read_new_hourly_data_file(self, start_date, end_date):
         print("\nGet sunpower hourly data file with data from " + str(start_date) + " through "
-              + str(end_date) + "\nSave file to " + str(os.getenv("FI_SUNPOWER_DIR")) + " directory.\n")
+              + str(end_date) + "\nSave file to " + str(os.getenv("DI_SUNPOWER_DIR")) + " directory.\n")
 
         return input("Enter filename: ", fcolor="blue")

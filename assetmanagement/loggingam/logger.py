@@ -20,7 +20,7 @@ class Logger:
 
         Create a logger with TimedRotatingFileHandler that creates a new log file at midnight and a detailed output
         format. This logger logs info, warning, error and critical levels, Output file is Python_Log.log in the
-        directory specified by FO_LOGGING_DIR in .env
+        directory specified by DO_LOGGING_DIR in .env
 
         Args:
             logger_name (str): name of the logger. used by %(name)s in formatter
@@ -28,7 +28,7 @@ class Logger:
         formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : line %(lineno)s : "
                                       "%(message)s")
 
-        log_file = str(pathlib.Path(__file__).parent.parent.parent / (os.getenv("FO_LOGGING_DIR") + "Python_Log.log"))
+        log_file = str(pathlib.Path(__file__).parent.parent.parent / (os.getenv("DO_LOGGING_DIR") + "Python_Log.log"))
         file_handler = TimedRotatingFileHandler(log_file, when="midnight")
         file_handler.setFormatter(formatter)
 

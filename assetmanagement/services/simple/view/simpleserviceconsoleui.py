@@ -14,7 +14,7 @@ class SimpleServiceConsoleUI(SimpleConsoleUIBase, SimpleViewBase):
         super().__init__()
 
     def input_read_new_bill(self):
-        print("\nGo to " + str(os.getenv("FI_SIMPLE_DIR")) + " directory and use template file to create a new simple "
+        print("\nGo to " + str(os.getenv("DI_SIMPLE_DIR")) + " directory and use template file to create a new simple "
               "bill using actual bill. Save file in the same directory.")
 
         return input("Enter simple service bill file name (include extension): ", fcolor="blue")

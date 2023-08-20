@@ -18,7 +18,7 @@ class NGConsoleUI(ComplexConsoleUIBase, NGViewBase):
                      fcolor="blue")
 
     def input_read_new_bill(self):
-        print("\nSave natural gas bill to " + str(os.getenv("FI_NATIONALGRID_DIR")) + " directory.")
+        print("\nSave natural gas bill to " + str(os.getenv("DI_NATIONALGRID_DIR")) + " directory.")
 
         return input("Enter natural gas bill file name (include extension): ", fcolor="blue")
 

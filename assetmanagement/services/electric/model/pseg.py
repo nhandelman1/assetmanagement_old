@@ -34,13 +34,13 @@ class PSEG(ComplexServiceModelBase):
         Returned instance of ElectricBillData is added to self.asb_dict
 
         Args:
-            filename (str): name of file in directory specified by FI_PSEG_DIR in .env
+            filename (str): name of file in directory specified by DI_PSEG_DIR in .env
 
         Returns:
             ElectricBillData: with all required fields populated and as many non required fields as available populated
         """
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent.parent /
-                                  (os.getenv("FI_PSEG_DIR") + filename), pages="all", password="11720", guess=False)
+                                  (os.getenv("DI_PSEG_DIR") + filename), pages="all", password="11720", guess=False)
         bill_data = ElectricBillData.default_constructor()
         bill_data.eh_kwh = 0
         bill_data.bank_kwh = 0

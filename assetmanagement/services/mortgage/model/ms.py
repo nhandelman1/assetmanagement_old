@@ -37,7 +37,7 @@ class MS(SimpleServiceModelBase):
         Returned instance of MortgageBillData is added to self.asb_dict
 
         Args:
-            filename (str): name of file in directory specified by FI_MORGANSTANLEY_DIR in .env
+            filename (str): name of file in directory specified by DI_MORGANSTANLEY_DIR in .env
 
         Returns:
             MortgageBillData: with all required fields populated and as many non required fields as available populated
@@ -48,7 +48,7 @@ class MS(SimpleServiceModelBase):
             return Decimal(str_val.replace("$", "").replace(" ", "").replace(",", ""))
 
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent.parent /
-                                  (os.getenv("FI_MORGANSTANLEY_DIR") + filename), pages="all", guess=False, silent=True)
+                                  (os.getenv("DI_MORGANSTANLEY_DIR") + filename), pages="all", guess=False, silent=True)
 
         df = df_list[0]
         address = ""

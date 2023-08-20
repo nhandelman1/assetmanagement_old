@@ -35,7 +35,7 @@ class NG(ComplexServiceModelBase):
         Returned instance of NatGasBillData is added to self.asb_dict
 
         Args:
-            filename (str): name of file in directory specified by FI_NATIONALGRID_DIR in .env
+            filename (str): name of file in directory specified by DI_NATIONALGRID_DIR in .env
 
         Returns:
             NatGasBillData: with all required fields populated and as many non required fields as available populated
@@ -44,7 +44,7 @@ class NG(ComplexServiceModelBase):
             ValueError: unable to read relevant data in bill
         """
         df_list = tabula.read_pdf(pathlib.Path(__file__).parent.parent.parent.parent.parent /
-                            (os.getenv("FI_NATIONALGRID_DIR") + filename), pages="all", password="11720", guess=False)
+                            (os.getenv("DI_NATIONALGRID_DIR") + filename), pages="all", password="11720", guess=False)
         bill_data = NatGasBillData.default_constructor()
         bill_data.saved_therms = 0
         bill_data.is_actual = True

@@ -1,8 +1,8 @@
-import dotenv
 import os
 import sys
 
 from PyQt5 import QtWidgets
+import dotenv
 import numpy as np
 import pandas as pd
 import scipy.stats as spstats
@@ -101,7 +101,7 @@ def run_bill_data_console():
                "\nChoose a bill or data option from the following:" + \
                "\n1: Input or Create Bills" + \
                "\n2: Display Bill Data" + \
-               "\n3: Utility Savings Report - Reload " + os.getenv("FO_DIR") + " directory from disk to see file" + \
+               "\n3: Utility Savings Report - Reload " + os.getenv("DO_DIR") + " directory from disk to see file" + \
                "\n4: Yearly Bill Report" + \
                "\n0: Exit Program"
 
@@ -127,7 +127,6 @@ def run_bill_data_console():
             print(str(ex), fcolor="red")
 
 
-# TODO standard project structure
 # Run the function if this is the main file executed
 if __name__ == "__main__":
     dotenv.load_dotenv()

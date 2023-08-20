@@ -40,7 +40,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
     def save_to_file(self, bill):
         """ Save simple bill to file with same format as SimpleServiceBillTemplate.csv
 
-        File saved to .env FI_SIMPLE_DIR directory. Existing file will not be overwritten (see next note)
+        File saved to .env DI_SIMPLE_DIR directory. Existing file will not be overwritten (see next note)
         Filename format: shortaddress_providername_startdate_enddate_*.csv
             * (int): if this file exists, replace star with next int in sequence until new file name is created
 
@@ -50,7 +50,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
         def to_fn(ver):
             fn = bill.real_estate.address.short_name() + "_" + str(bill.service_provider.provider.value) + "_" \
                    + str(bill.start_date) + "_" + str(bill.end_date) + "_" + str(ver) + ".csv"
-            return fn, pathlib.Path(__file__).parent.parent.parent.parent.parent / (os.getenv("FI_SIMPLE_DIR") + fn)
+            return fn, pathlib.Path(__file__).parent.parent.parent.parent.parent / (os.getenv("DI_SIMPLE_DIR") + fn)
 
         filename, full_path = to_fn(1)
         while os.path.exists(full_path):
@@ -71,7 +71,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
     def process_service_bill(self, filename):
         """ Open, process and return simple service bill in same format as SimpleServiceBillTemplate.csv
 
-        See directory specified by FI_SIMPLE_DIR in .env for SimpleServiceBillTemplate.csv
+        See directory specified by DI_SIMPLE_DIR in .env for SimpleServiceBillTemplate.csv
             address: valid values found in database.popo.realestate.Address values
             provider: see self.valid_providers() then database.popo.serviceprovider.ServiceProviderEnum for valid values
             dates: YYYY-MM-DD format
@@ -80,7 +80,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
         Returned instance of SimpleServiceBillData is added to self.asb_dict
 
         Args:
-            filename (str): name of file in directory specified by FI_SIMPLE_DIR in .env
+            filename (str): name of file in directory specified by DI_SIMPLE_DIR in .env
 
         Returns:
             SimpleServiceBillData: all attributes are set with bill values except id and paid_date. id is set to None
@@ -90,7 +90,7 @@ class SimpleServiceModel(SimpleServiceModelBase):
             ValueError: if address or service provider not found or value is not in correct format
         """
         df = pd.read_csv(pathlib.Path(__file__).parent.parent.parent.parent.parent /
-                         (os.getenv("FI_SIMPLE_DIR") + filename))
+                         (os.getenv("DI_SIMPLE_DIR") + filename))
 
         address = df.loc[0, "address"]
         real_estate = self.read_real_estate_by_address(Address.to_address(address))

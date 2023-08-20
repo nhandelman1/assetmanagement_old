@@ -81,11 +81,11 @@ class UtilitySavings:
         self.final_df = f_df
 
     def to_excel(self):
-        """ Write self.final_df to excel file saved in .env FO_DIR directory
+        """ Write self.final_df to excel file saved in .env DO_DIR directory
 
         Output file name has format: "Utility Savings as of (datetime this function is called).xlsx"
         """
-        output_file = pathlib.Path(__file__).parent.parent.parent / (os.getenv("FO_DIR") +
+        output_file = pathlib.Path(__file__).parent.parent.parent / (os.getenv("DO_DIR") +
                          excelutil.clean_file_name("Utility Savings as of " + str(datetime.datetime.now()) + ".xlsx"))
         writer = pd.ExcelWriter(output_file, engine="openpyxl")
         self.final_df.to_excel(writer)

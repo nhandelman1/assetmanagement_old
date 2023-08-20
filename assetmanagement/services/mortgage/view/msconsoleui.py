@@ -12,7 +12,7 @@ class MSConsoleUI(SimpleConsoleUIBase, MortgageViewBase):
         super().__init__()
 
     def input_read_new_bill(self):
-        print("\nSave mortgage bill to " + str(os.getenv("FI_MORGANSTANLEY_DIR")) + " directory.")
+        print("\nSave mortgage bill to " + str(os.getenv("DI_MORGANSTANLEY_DIR")) + " directory.")
 
         return input("Enter mortgage bill file name (include extension): ", fcolor="blue")
 

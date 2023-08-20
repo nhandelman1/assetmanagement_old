@@ -29,11 +29,11 @@ class Solar(SimpleServiceModelBase):
     def process_service_bill_dates(self, filename):
         """ Open, process and return solar service bill dates in same format as SolarBillTemplate.csv
 
-        See directory specified by FI_SUNPOWER_DIR in .env for SolarBillTemplate.csv
+        See directory specified by DI_SUNPOWER_DIR in .env for SolarBillTemplate.csv
             dates: YYYY-MM-DD format
 
         Args:
-            filename (str): name of file in directory specified by FI_SUNPOWER_DIR in .env
+            filename (str): name of file in directory specified by DI_SUNPOWER_DIR in .env
 
         Returns:
             (datetime.date, datetime.date, pd.DataFrame): three tuple of start date, end date, bill dataframe
@@ -42,7 +42,7 @@ class Solar(SimpleServiceModelBase):
             ValueError: if required dates not found or have incorrect values or format
         """
         df = pd.read_csv(pathlib.Path(__file__).parent.parent.parent.parent.parent /
-                         (os.getenv("FI_SUNPOWER_DIR") + filename))
+                         (os.getenv("DI_SUNPOWER_DIR") + filename))
         start_date = datetime.datetime.strptime(df.loc[0, "start_date"], "%Y-%m-%d").date()
         end_date = datetime.datetime.strptime(df.loc[0, "end_date"], "%Y-%m-%d").date()
 
@@ -56,7 +56,7 @@ class Solar(SimpleServiceModelBase):
             get solar and home kwh usage the billing period.
         This function will not work for the first bill since the beginning of the month opportunity cost basis isn't
             set. Should insert first bill directly in table.
-        See directory specified by FI_SUNPOWER_DIR in .env for SolarBillTemplate.csv
+        See directory specified by DI_SUNPOWER_DIR in .env for SolarBillTemplate.csv
             address: valid values found in database.popo.realestate.Address values
             provider: see self.valid_providers() then database.popo.serviceprovider.ServiceProviderEnum for valid values
             dates: YYYY-MM-DD format. start_date and end_date should match the start_date and end_date of an electric
@@ -66,7 +66,7 @@ class Solar(SimpleServiceModelBase):
         Returned instance of SolarBillData is added to self.asb_dict
 
         Args:
-            filename (str): name of file in directory specified by FI_SUNPOWER_DIR in .env
+            filename (str): name of file in directory specified by DI_SUNPOWER_DIR in .env
 
         Returns:
             SolarBillData: all attributes are set with bill values except id and paid_date. id is set to None
@@ -226,7 +226,7 @@ class Solar(SimpleServiceModelBase):
             ValueError: if a date does not have 24 entries (1 per hour)
         """
         df = pd.read_excel(pathlib.Path(__file__).parent.parent.parent.parent.parent /
-                           (os.getenv("FI_SUNPOWER_DIR") + filename))
+                           (os.getenv("DI_SUNPOWER_DIR") + filename))
         df = df.rename(columns={"Period": "dt", "Solar Production (kWh)": "solar_kwh", "Home Usage (kWh)": "home_kwh"})
         df["dt"] = df["dt"].str.split(" ").map(lambda x: x[1] + " " + x[3])
         df["dt"] = pd.to_datetime(df["dt"], format="%m/%d/%Y %I:%M%p")
